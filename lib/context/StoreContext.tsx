@@ -13,6 +13,8 @@ interface StoreContextType {
   settings: SiteSettings;
   
   // UI States
+  isPreloaderComplete: boolean;
+  setIsPreloaderComplete: (complete: boolean) => void;
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
   isSearchOpen: boolean;
@@ -70,6 +72,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SETTINGS);
   
+  const [isPreloaderComplete, setIsPreloaderComplete] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -407,6 +410,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         wishlist,
         orders,
         settings,
+        isPreloaderComplete,
+        setIsPreloaderComplete,
         isCartOpen,
         setIsCartOpen,
         isSearchOpen,

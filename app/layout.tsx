@@ -66,8 +66,15 @@ export const metadata: Metadata = {
     type: "website",
   },
   icons: {
-    icon: "/images/matilda-logo-leopard-transparent.png",
-    apple: "/images/matilda-logo-leopard-transparent.png",
+    icon: [
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png" }
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }
+    ],
+    shortcut: "/favicon.png"
   },
 };
 

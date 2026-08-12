@@ -4,22 +4,72 @@ import React, { useRef } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useStore } from "@/lib/context/StoreContext";
 
 export const Hero = () => {
+  const { isPreloaderComplete } = useStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"],
   });
 
-  const videoScale = useTransform(scrollYProgress, [0, 1], [1, 1.07]);
-  const textY = useTransform(scrollYProgress, [0, 1], [0, 50]);
-  const opacity = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
+  const videoScale = useTransform(scrollYProgress, [0, 1], [1, 1.06]);
+  const textY = useTransform(scrollYProgress, [0, 1], [0, 45]);
+  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+
+  // Motion variants triggered sequentially
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.18,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const line1Variants = {
+    hidden: { opacity: 0, y: 35 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+    },
+  };
+
+  const line2Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+    },
+  };
+
+  const line3Variants = {
+    hidden: { opacity: 0, y: 35 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+    },
+  };
+
+  const ctaVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+    },
+  };
 
   return (
     <section
       ref={containerRef}
-      className="relative min-h-[90vh] lg:min-h-[95vh] bg-[#1A0205] text-[#FFFDF9] flex items-center justify-center overflow-hidden"
+      className="relative min-h-[92vh] sm:min-h-[96vh] bg-[#1A0205] text-[#FFFDF9] flex items-center justify-center overflow-hidden font-sans"
     >
       {/* ── CINEMATIC BACKGROUND FILM ── */}
       <motion.div style={{ scale: videoScale }} className="absolute inset-0 z-0 pointer-events-none">
@@ -29,94 +79,72 @@ export const Hero = () => {
           muted
           playsInline
           poster="/images/hero-campaign-shot.png"
-          className="w-full h-full object-cover object-center opacity-75 md:opacity-80"
+          className="w-full h-full object-cover object-center opacity-70 sm:opacity-80"
         >
           <source src="/videos/hero-campaign.mp4" type="video/mp4" />
         </video>
 
         {/* Subtle Burgundy Color Grade */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#1A0205]/85 via-[#260407]/50 to-[#1A0205]/35" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1A0205] via-transparent to-[#1A0205]/50" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#1A0205]/90 via-[#260407]/55 to-[#1A0205]/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1A0205] via-transparent to-[#1A0205]/60" />
       </motion.div>
 
       {/* ── HERO EDITORIAL COMPOSITION ── */}
       <motion.div
         style={{ y: textY, opacity }}
-        className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-20 sm:py-28 w-full flex flex-col justify-center items-start"
+        className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-24 sm:py-32 w-full flex flex-col justify-center items-start"
       >
-        <div className="max-w-3xl space-y-8">
-          
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate={isPreloaderComplete ? "visible" : "hidden"}
+          className="max-w-4xl w-full"
+        >
           {/* Eyebrow: Quiet Brand Attribution */}
-          <div className="overflow-hidden">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-              className="inline-flex items-center gap-2 text-[#E4C98A]/80 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] font-sans font-light"
-            >
+          <motion.div variants={line2Variants} className="mb-6 sm:mb-8 pt-2">
+            <div className="inline-flex items-center gap-2 text-[#E4C98A]/85 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] font-light">
               <span>MATILDA</span>
               <span className="text-[#C8A15A]/40">•</span>
-              <span className="font-serif italic tracking-wide lowercase">by duha ajaz pandith</span>
-            </motion.div>
-          </div>
+              <span className="font-serif italic tracking-wide lowercase text-xs">by duha ajaz pandith</span>
+            </div>
+          </motion.div>
 
-          {/* High-Fashion Editorial Headline Composition */}
-          <div className="space-y-0 leading-[0.92] text-[#FFFDF9]">
-            {/* Line 1 */}
-            <div className="overflow-hidden">
-              <motion.h1
-                initial={{ opacity: 0, y: 60 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1.0, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="font-serif text-5xl sm:text-7xl lg:text-8xl xl:text-9xl font-normal tracking-tight block"
-              >
+          {/* ── HIGH-FASHION EDITORIAL HEADLINE WITH DEDICATED SPACING BOXES ── */}
+          <div className="space-y-3 sm:space-y-4 text-[#FFFDF9] mb-8 sm:mb-10">
+            
+            {/* Line 1: JEWELS (Ample top & left safe padding, zero clipping) */}
+            <motion.div variants={line1Variants} className="pt-1 pb-1 pl-0.5">
+              <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-normal tracking-tight leading-[1.05] block text-[#FFFDF9]">
                 JEWELS
-              </motion.h1>
-            </div>
+              </h1>
+            </motion.div>
 
-            {/* Line 2: Connector phrase in refined Manrope */}
-            <div className="overflow-hidden py-1">
-              <motion.span
-                initial={{ opacity: 0, y: 25 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.85, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                className="font-sans font-light text-xs sm:text-sm uppercase tracking-[0.22em] text-[#E4C98A] block pl-1 sm:pl-2"
-              >
+            {/* Line 2: FOR EVERY (Separated with clean whitespace, quiet gold/cream) */}
+            <motion.div variants={line2Variants} className="py-1 pl-1 sm:pl-2">
+              <span className="font-sans font-normal text-xs sm:text-sm uppercase tracking-[0.22em] text-[#E4C98A] block">
                 for every
-              </motion.span>
-            </div>
+              </span>
+            </motion.div>
 
-            {/* Line 3: Italic Serif statement */}
-            <div className="overflow-hidden">
-              <motion.div
-                initial={{ opacity: 0, y: 60 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1.0, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="font-serif italic text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-light tracking-tight text-[#EFE3D2]"
-              >
+            {/* Line 3: version of you. (Italic serif statement with distinct vertical room) */}
+            <motion.div variants={line3Variants} className="pt-1 pb-2 pl-0.5">
+              <div className="font-serif italic text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-light tracking-tight leading-[1.1] text-[#EFE3D2]">
                 version of you.
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Single Refined Luxury CTA */}
-          <div className="overflow-hidden pt-4">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="flex items-center gap-6"
-            >
-              <Link
-                href="/shop"
-                className="inline-flex items-center gap-3 px-8 py-3.5 bg-[#C8A15A] text-[#1A0205] font-sans font-medium text-xs uppercase tracking-[0.18em] hover:bg-[#E4C98A] transition-all duration-300 shadow-luxury"
-              >
-                <span>Discover The Collection</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              </div>
             </motion.div>
           </div>
-        </div>
+
+          {/* ── SINGLE REFINED LUXURY CTA ── */}
+          <motion.div variants={ctaVariants} className="pt-2">
+            <Link
+              href="/shop"
+              className="inline-flex items-center gap-3 px-8 py-3.5 bg-[#C8A15A] text-[#1A0205] font-sans font-medium text-xs uppercase tracking-[0.16em] hover:bg-[#E4C98A] transition-all duration-300 shadow-luxury group"
+            >
+              <span>Discover The Collection</span>
+              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
+        </motion.div>
       </motion.div>
     </section>
   );
