@@ -28,18 +28,21 @@ const config: Config = {
       },
       fontFamily: {
         serif: ["var(--font-cormorant)", "Georgia", "serif"],
-        sans: ["var(--font-inter)", "system-ui", "-apple-system", "sans-serif"],
+        editorial: ["var(--font-instrument)", "var(--font-cormorant)", "Georgia", "serif"],
+        sans: ["var(--font-manrope)", "system-ui", "-apple-system", "sans-serif"],
         display: ["var(--font-cormorant)", "Georgia", "serif"],
       },
       letterSpacing: {
-        luxury: "0.22em",
-        ultra: "0.35em",
-        spaced: "0.45em",
+        luxury: "0.14em",
+        editorial: "0.18em",
+        micro: "0.22em",
+        normal: "0em",
+        tight: "-0.02em",
       },
       boxShadow: {
-        luxury: "0 10px 40px -10px rgba(38, 4, 7, 0.08)",
-        card: "0 4px 20px -2px rgba(38, 4, 7, 0.04)",
-        gold: "0 0 30px rgba(200, 161, 90, 0.15)",
+        luxury: "0 10px 40px -10px rgba(26, 2, 5, 0.08)",
+        card: "0 4px 20px -2px rgba(26, 2, 5, 0.03)",
+        gold: "0 0 30px rgba(200, 161, 90, 0.12)",
         drawer: "-10px 0 40px rgba(26, 2, 5, 0.25)",
       },
       transitionTimingFunction: {

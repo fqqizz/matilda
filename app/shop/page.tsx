@@ -91,19 +91,19 @@ function ShopContent() {
     inStockOnly;
 
   return (
-    <div className="bg-[#FFFDF9] min-h-screen py-12 sm:py-20 text-[#191414]">
+    <div className="bg-[#FFFDF9] min-h-screen py-12 sm:py-20 text-[#191414] font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         
         {/* ── MAGAZINE EDITORIAL HEADER ── */}
-        <div className="text-center max-w-3xl mx-auto space-y-4">
-          <span className="text-[10px] uppercase tracking-[0.35em] text-[#C8A15A] font-semibold block">
+        <div className="text-center max-w-3xl mx-auto space-y-3">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-[#C8A15A] font-medium block">
             The Complete Collection
           </span>
           <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-normal text-[#1A0205] leading-tight">
             Jewels for every version of you.
           </h1>
-          <p className="text-xs sm:text-sm text-[#7A7373] font-light max-w-lg mx-auto leading-relaxed">
-            Delicate belly chains, gothic pendants, floral enamel bangles, and traditional Marathi nose rings—crafted for everyday wear.
+          <p className="text-xs sm:text-sm text-[#7A7373] font-light max-w-md mx-auto leading-relaxed">
+            Delicate waist chains, celestial pendants, floral enamel bangles, and traditional Marathi nose rings.
           </p>
         </div>
 
@@ -111,7 +111,7 @@ function ShopContent() {
         <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           <button
             onClick={() => setSelectedCategory("all")}
-            className={`px-5 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-medium whitespace-nowrap transition-all duration-300 ${
+            className={`px-4 py-2 rounded-full text-xs uppercase tracking-[0.14em] font-medium whitespace-nowrap transition-all duration-300 ${
               selectedCategory === "all"
                 ? "bg-[#1A0205] text-[#E4C98A] shadow-luxury"
                 : "bg-[#FAF6F0] text-[#7A7373] hover:text-[#1A0205] border border-[#EFE3D2]"
@@ -123,7 +123,7 @@ function ShopContent() {
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.name)}
-              className={`px-5 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] font-medium whitespace-nowrap transition-all duration-300 ${
+              className={`px-4 py-2 rounded-full text-xs uppercase tracking-[0.14em] font-medium whitespace-nowrap transition-all duration-300 ${
                 selectedCategory === cat.name
                   ? "bg-[#1A0205] text-[#E4C98A] shadow-luxury"
                   : "bg-[#FAF6F0] text-[#7A7373] hover:text-[#1A0205] border border-[#EFE3D2]"
@@ -141,7 +141,7 @@ function ShopContent() {
           <div className="flex items-center gap-3 flex-1 min-w-[240px]">
             <button
               onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
-              className="lg:hidden flex items-center gap-2 px-3.5 py-2 bg-[#1A0205] text-[#E4C98A] text-xs font-semibold uppercase tracking-wider rounded-none"
+              className="lg:hidden flex items-center gap-2 px-3 py-1.5 bg-[#1A0205] text-[#E4C98A] text-xs font-medium uppercase tracking-[0.14em] rounded-none"
             >
               <Filter className="w-3.5 h-3.5" />
               <span>Filters</span>
@@ -153,8 +153,8 @@ function ShopContent() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name or category..."
-                className="w-full pl-8 pr-3 py-2 bg-[#FFFDF9] border border-[#EFE3D2] rounded text-xs text-[#191414] focus:outline-none focus:border-[#C8A15A]"
+                placeholder="Search pieces..."
+                className="w-full pl-8 pr-3 py-1.5 bg-[#FFFDF9] border border-[#EFE3D2] rounded text-xs text-[#191414] focus:outline-none focus:border-[#C8A15A]"
               />
               {searchQuery && (
                 <button
@@ -170,7 +170,7 @@ function ShopContent() {
           {/* Results Count & Sorting */}
           <div className="flex items-center gap-4 text-xs">
             <span className="text-[#7A7373] font-light hidden sm:inline">
-              Showing <strong className="text-[#1A0205] font-semibold">{filteredProducts.length}</strong> pieces
+              Showing <strong className="text-[#1A0205] font-medium">{filteredProducts.length}</strong> pieces
             </span>
 
             <div className="flex items-center gap-2">
@@ -178,7 +178,7 @@ function ShopContent() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-[#FFFDF9] border border-[#EFE3D2] text-[#1A0205] font-medium text-xs px-3 py-2 rounded focus:outline-none focus:border-[#C8A15A]"
+                className="bg-[#FFFDF9] border border-[#EFE3D2] text-[#1A0205] font-medium text-xs px-3 py-1.5 rounded focus:outline-none focus:border-[#C8A15A]"
               >
                 <option value="featured">Featured First</option>
                 <option value="newest">Newest Arrivals</option>
@@ -195,14 +195,14 @@ function ShopContent() {
           {/* Desktop Filter Sidebar */}
           <div className="hidden lg:block space-y-6 bg-[#FAF6F0] p-6 rounded-sm border border-[#EFE3D2] h-fit">
             <div className="flex items-center justify-between border-b border-[#EFE3D2] pb-3">
-              <div className="flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-[#1A0205]">
-                <SlidersHorizontal className="w-4 h-4 text-[#C8A15A]" />
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.14em] font-medium text-[#1A0205]">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#C8A15A]" />
                 <span>Refine</span>
               </div>
               {hasActiveFilters && (
                 <button
                   onClick={resetFilters}
-                  className="text-[11px] text-[#5A1118] hover:underline font-semibold"
+                  className="text-[11px] text-[#5A1118] hover:underline font-medium"
                 >
                   Reset All
                 </button>
@@ -211,7 +211,7 @@ function ShopContent() {
 
             {/* Price Filter Slider */}
             <div className="space-y-3">
-              <div className="flex justify-between text-xs text-[#1A0205] font-medium font-sans">
+              <div className="flex justify-between text-xs text-[#1A0205] font-medium">
                 <span>Maximum Price</span>
                 <span className="text-[#C8A15A] font-semibold">{formatINR(maxPrice)}</span>
               </div>
@@ -232,7 +232,7 @@ function ShopContent() {
 
             {/* In Stock Toggle */}
             <div className="pt-3 border-t border-[#EFE3D2]">
-              <label className="flex items-center gap-2 text-xs text-[#1A0205] cursor-pointer">
+              <label className="flex items-center gap-2 text-xs text-[#1A0205] cursor-pointer font-light">
                 <input
                   type="checkbox"
                   checked={inStockOnly}
@@ -245,8 +245,8 @@ function ShopContent() {
 
             {/* Trust Note */}
             <div className="pt-4 border-t border-[#EFE3D2] space-y-1 text-[11px] text-[#7A7373] font-light">
-              <p className="font-semibold text-[#1A0205]">Delivery Across India</p>
-              <p>All items packed cushioned in signature MATILDA packaging.</p>
+              <p className="font-medium text-[#1A0205]">Delivery Across India</p>
+              <p>All pieces packed in signature MATILDA packaging.</p>
             </div>
           </div>
 
@@ -254,14 +254,14 @@ function ShopContent() {
           <div className="lg:col-span-3">
             {filteredProducts.length === 0 ? (
               <div className="text-center py-20 bg-[#FAF6F0] rounded-sm border border-[#EFE3D2] space-y-4">
-                <Sparkles className="w-8 h-8 text-[#C8A15A] mx-auto" />
+                <Sparkles className="w-7 h-7 text-[#C8A15A] mx-auto" />
                 <h3 className="font-serif text-2xl text-[#1A0205]">No pieces match your filters</h3>
                 <p className="text-xs text-[#7A7373] max-w-sm mx-auto font-light">
                   Try clearing your search query or expanding the price range to explore more pieces.
                 </p>
                 <button
                   onClick={resetFilters}
-                  className="px-7 py-3 bg-[#1A0205] text-[#E4C98A] text-xs uppercase tracking-widest font-semibold hover:bg-[#3A080C] transition-colors"
+                  className="px-6 py-2.5 bg-[#1A0205] text-[#E4C98A] text-xs uppercase tracking-[0.14em] font-medium hover:bg-[#3A080C] transition-colors"
                 >
                   Clear All Filters
                 </button>

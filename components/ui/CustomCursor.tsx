@@ -50,7 +50,7 @@ export const CustomCursor = () => {
   return (
     <motion.div
       aria-hidden="true"
-      className="fixed pointer-events-none z-[9998] flex items-center justify-center -translate-x-1/2 -translate-y-1/2"
+      className="fixed pointer-events-none z-[9998] flex items-center justify-center -translate-x-1/2 -translate-y-1/2 font-sans"
       animate={{
         x: mousePosition.x,
         y: mousePosition.y,
@@ -62,7 +62,7 @@ export const CustomCursor = () => {
         mass: 0.5,
       }}
     >
-      <div className="px-3 py-1.5 rounded-full bg-[#1A0205]/90 text-[#E4C98A] text-[9px] uppercase tracking-[0.25em] font-semibold backdrop-blur-md border border-[#C8A15A]/30 shadow-luxury flex items-center gap-1">
+      <div className="px-3 py-1 rounded-full bg-[#1A0205]/90 text-[#E4C98A] text-[9px] uppercase tracking-[0.14em] font-medium backdrop-blur-md border border-[#C8A15A]/30 shadow-luxury flex items-center gap-1">
         {cursorText}
       </div>
     </motion.div>

@@ -12,19 +12,16 @@ export const CategoryGrid = () => {
 
   return (
     <section className="py-24 sm:py-32 bg-[#FAF6F0] text-[#191414] border-b border-[#EFE3D2]/70 relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
         
         {/* ── SECTION HEADER ── */}
-        <div className="text-center max-w-2xl mx-auto space-y-3">
-          <span className="text-[10px] uppercase tracking-[0.35em] text-[#C8A15A] font-semibold block">
-            Curated Categories
+        <div className="text-center max-w-2xl mx-auto space-y-2">
+          <span className="text-[10px] uppercase tracking-[0.18em] text-[#C8A15A] font-sans font-medium block">
+            Categories
           </span>
           <h2 className="font-serif text-3xl sm:text-5xl font-normal text-[#1A0205] leading-tight">
-            Explore by Silhouette
+            Explore by silhouette.
           </h2>
-          <p className="text-xs sm:text-sm text-[#7A7373] font-light max-w-md mx-auto">
-            From statement neck cords to delicate waist chains, discover pieces curated for every mood and occasion.
-          </p>
         </div>
 
         {/* ── EDITORIAL CATEGORY TILES (Grid) ── */}
@@ -35,11 +32,11 @@ export const CategoryGrid = () => {
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.6, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
             >
               <Link
                 href={`/shop?category=${encodeURIComponent(cat.name)}`}
-                className="group relative aspect-[4/5] block rounded-sm overflow-hidden bg-[#260407] border border-[#EFE3D2]/80 shadow-sm"
+                className="group relative aspect-[4/5] block rounded-sm overflow-hidden bg-[#260407] border border-[#EFE3D2]/80 shadow-xs"
               >
                 {/* Background Image */}
                 <Image
@@ -56,21 +53,18 @@ export const CategoryGrid = () => {
                 {/* Content Overlay */}
                 <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-between text-[#FFFDF9]">
                   <div className="flex justify-end">
-                    <span className="w-8 h-8 rounded-full bg-[#FFFDF9]/10 backdrop-blur-sm border border-[#FFFDF9]/20 flex items-center justify-center text-[#E4C98A] group-hover:bg-[#C8A15A] group-hover:text-[#1A0205] transition-colors duration-300">
-                      <ArrowUpRight className="w-4 h-4" />
+                    <span className="w-8 h-8 rounded-full bg-[#FFFDF9]/10 backdrop-blur-xs border border-[#FFFDF9]/20 flex items-center justify-center text-[#E4C98A] group-hover:bg-[#C8A15A] group-hover:text-[#1A0205] transition-colors duration-300">
+                      <ArrowUpRight className="w-3.5 h-3.5" />
                     </span>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <p className="text-[10px] uppercase tracking-[0.25em] text-[#E4C98A] font-medium font-sans">
-                      Collection {index + 1}
+                  <div className="space-y-1">
+                    <p className="text-[9.5px] uppercase tracking-[0.18em] text-[#E4C98A]/90 font-sans font-normal">
+                      Silhouette 0{index + 1}
                     </p>
-                    <h3 className="font-serif text-2xl sm:text-3xl font-medium text-[#FFFDF9] leading-tight">
+                    <h3 className="font-serif text-2xl sm:text-3xl font-normal text-[#FFFDF9] leading-tight">
                       {cat.name}
                     </h3>
-                    <p className="text-[11px] text-[#EFE3D2]/75 font-light line-clamp-2 pt-1 font-sans">
-                      {cat.description}
-                    </p>
                   </div>
                 </div>
               </Link>

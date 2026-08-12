@@ -4,9 +4,9 @@ import { ArrowRight } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="min-h-[78vh] flex flex-col items-center justify-center text-center px-4 py-20 bg-[#FFFDF9] text-[#191414]">
-      <div className="max-w-md space-y-5">
-        <span className="text-[10px] uppercase tracking-[0.35em] text-[#C8A15A] font-medium block">
+    <div className="min-h-[78vh] flex flex-col items-center justify-center text-center px-4 py-20 bg-[#FFFDF9] text-[#191414] font-sans">
+      <div className="max-w-md space-y-4">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-[#C8A15A] font-medium block">
           404 • Not Found
         </span>
         <h1 className="font-serif text-3xl sm:text-5xl font-normal text-[#1A0205] leading-tight">
@@ -16,13 +16,13 @@ export default function NotFound() {
         <p className="text-xs text-[#7A7373] font-light leading-relaxed max-w-xs mx-auto">
           Explore our complete collection of everyday silhouettes and signature pieces.
         </p>
-        <div className="pt-3">
+        <div className="pt-2">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-[#1A0205] text-[#E4C98A] text-xs uppercase tracking-[0.22em] font-semibold hover:bg-[#3A080C] transition-all shadow-luxury"
+            className="inline-flex items-center gap-2 px-7 py-3 bg-[#1A0205] text-[#E4C98A] text-xs uppercase tracking-[0.14em] font-medium hover:bg-[#3A080C] transition-all shadow-luxury"
           >
             <span>Back to MATILDA</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       </div>

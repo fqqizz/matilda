@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useStore } from "@/lib/context/StoreContext";
 import { formatINR, calculateDiscount } from "@/lib/utils";
-import { X, Star, Heart, ShoppingBag, ArrowRight, Check, Truck, ShieldCheck } from "lucide-react";
+import { X, Star, Heart, ShoppingBag, ArrowRight, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const QuickViewModal = () => {
@@ -29,7 +29,7 @@ export const QuickViewModal = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-sans">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -41,18 +41,18 @@ export const QuickViewModal = () => {
 
         {/* Modal Window */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          initial={{ opacity: 0, scale: 0.96, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          transition={{ duration: 0.25 }}
+          exit={{ opacity: 0, scale: 0.96, y: 10 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-10 w-full max-w-3xl bg-[#FFFDF9] rounded-sm shadow-2xl border border-[#EFE3D2] overflow-hidden my-auto"
         >
           {/* Close button */}
           <button
             onClick={() => setQuickViewProduct(null)}
-            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/80 text-[#3A080C] hover:bg-[#3A080C] hover:text-[#E4C98A] transition-colors"
+            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/80 text-[#1A0205] hover:bg-[#1A0205] hover:text-[#E4C98A] transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
 
           <div className="grid grid-cols-1 md:grid-cols-2">
@@ -75,7 +75,7 @@ export const QuickViewModal = () => {
                       key={idx}
                       onClick={() => setSelectedImgIndex(idx)}
                       className={`relative w-14 h-14 rounded-sm overflow-hidden border-2 transition-all ${
-                        selectedImgIndex === idx ? "border-[#3A080C]" : "border-transparent opacity-70 hover:opacity-100"
+                        selectedImgIndex === idx ? "border-[#1A0205]" : "border-transparent opacity-60 hover:opacity-100"
                       }`}
                     >
                       <Image src={img} alt={`Thumbnail ${idx + 1}`} fill className="object-cover" />
@@ -88,43 +88,43 @@ export const QuickViewModal = () => {
             {/* Product Info Column */}
             <div className="p-6 sm:p-8 flex flex-col justify-between space-y-4">
               <div>
-                <span className="text-[10px] uppercase tracking-[0.25em] text-[#C8A15A] font-semibold">
+                <span className="text-[9.5px] uppercase tracking-[0.14em] text-[#C8A15A] font-medium font-sans">
                   {product.category}
                 </span>
 
-                <h2 className="font-serif text-2xl font-bold text-[#3A080C] mt-1">
+                <h2 className="font-serif text-2xl sm:text-3xl font-medium text-[#1A0205] mt-1 leading-tight">
                   {product.name}
                 </h2>
 
-                {/* Rating */}
-                {product.rating > 0 && (
-                  <div className="flex items-center gap-1.5 mt-1 text-xs text-[#7A7373]">
+                {/* Reviews */}
+                {product.reviewCount > 0 && (
+                  <div className="flex items-center gap-1.5 mt-1.5 text-xs text-[#7A7373] font-light">
                     <div className="flex text-[#C8A15A]">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-3.5 h-3.5 ${
+                          className={`w-3 h-3 ${
                             i < Math.floor(product.rating) ? "fill-[#C8A15A]" : "text-[#EFE3D2]"
                           }`}
                         />
                       ))}
                     </div>
-                    <span>({product.reviewCount} customer reviews)</span>
+                    <span>({product.reviewCount} reviews)</span>
                   </div>
                 )}
 
                 {/* Price */}
                 <div className="flex items-baseline gap-3 my-3">
-                  <span className="font-serif text-2xl font-bold text-[#3A080C]">
+                  <span className="font-sans text-2xl font-medium text-[#1A0205]">
                     {formatINR(product.price)}
                   </span>
                   {product.originalPrice && product.originalPrice > product.price && (
                     <>
-                      <span className="text-sm text-[#7A7373] line-through">
+                      <span className="text-sm text-[#7A7373] line-through font-light">
                         {formatINR(product.originalPrice)}
                       </span>
                       {discount && (
-                        <span className="bg-[#C8A15A] text-[#260407] text-[10px] font-bold px-1.5 py-0.5 rounded">
+                        <span className="bg-[#C8A15A] text-[#1A0205] text-[9.5px] font-bold px-1.5 py-0.5 rounded">
                           Save {discount}%
                         </span>
                       )}
@@ -132,7 +132,7 @@ export const QuickViewModal = () => {
                   )}
                 </div>
 
-                <p className="text-xs text-[#4A4545] leading-relaxed line-clamp-3">
+                <p className="text-xs text-[#4A4545] leading-relaxed line-clamp-3 font-light">
                   {product.description}
                 </p>
               </div>
@@ -142,20 +142,24 @@ export const QuickViewModal = () => {
                 <div className="space-y-3 pt-2 border-t border-[#F7F1E8]">
                   {product.variants.map((variant) => (
                     <div key={variant.name}>
-                      <label className="text-[11px] uppercase tracking-wider text-[#3A080C] font-semibold block mb-1.5">
+                      <label className="text-[11px] uppercase tracking-wider text-[#1A0205] font-medium block mb-1.5">
                         {variant.name}:
                       </label>
                       <div className="flex flex-wrap gap-2">
                         {variant.options.map((opt) => (
                           <button
                             key={opt.label}
+                            type="button"
                             onClick={() =>
-                              setSelectedVariants((prev) => ({ ...prev, [variant.name]: opt.label }))
+                              setSelectedVariants((prev) => ({
+                                ...prev,
+                                [variant.name]: opt.label,
+                              }))
                             }
                             className={`px-3 py-1.5 text-xs rounded border transition-all ${
                               selectedVariants[variant.name] === opt.label
-                                ? "border-[#3A080C] bg-[#3A080C] text-[#E4C98A] font-medium"
-                                : "border-[#EFE3D2] bg-[#FAF6F0] text-[#3A080C] hover:border-[#C8A15A]"
+                                ? "border-[#1A0205] bg-[#1A0205] text-[#E4C98A] font-medium shadow-xs"
+                                : "border-[#EFE3D2] bg-[#FFFDF9] text-[#1A0205] hover:border-[#C8A15A]"
                             }`}
                           >
                             {opt.label}
@@ -167,21 +171,21 @@ export const QuickViewModal = () => {
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="space-y-3 pt-4 border-t border-[#F7F1E8]">
-                <div className="flex gap-3">
+              {/* Action Buttons */}
+              <div className="space-y-2.5 pt-4 border-t border-[#F7F1E8]">
+                <div className="flex gap-2">
                   <button
                     onClick={handleAddToCart}
-                    className="flex-1 py-3 px-4 bg-[#3A080C] text-[#E4C98A] text-xs uppercase tracking-[0.2em] font-semibold hover:bg-[#5A1118] transition-all flex items-center justify-center gap-2 shadow-md"
+                    className="flex-1 py-3 px-4 bg-[#1A0205] text-[#E4C98A] text-xs uppercase tracking-[0.14em] font-medium hover:bg-[#3A080C] transition-all flex items-center justify-center gap-2"
                   >
                     {isAdded ? (
                       <>
-                        <Check className="w-4 h-4 text-[#25D366]" />
+                        <Check className="w-3.5 h-3.5 text-[#25D366]" />
                         <span>Added to Bag</span>
                       </>
                     ) : (
                       <>
-                        <ShoppingBag className="w-4 h-4" />
+                        <ShoppingBag className="w-3.5 h-3.5" />
                         <span>Add to Bag</span>
                       </>
                     )}
@@ -191,29 +195,23 @@ export const QuickViewModal = () => {
                     onClick={() => toggleWishlist(product.id)}
                     className={`p-3 rounded border transition-colors ${
                       isSaved
-                        ? "border-[#3A080C] bg-[#3A080C] text-[#E4C98A]"
-                        : "border-[#EFE3D2] bg-[#FAF6F0] text-[#3A080C] hover:text-[#C8A15A]"
+                        ? "border-[#1A0205] bg-[#1A0205] text-[#E4C98A]"
+                        : "border-[#EFE3D2] bg-[#FAF6F0] text-[#1A0205] hover:border-[#C8A15A]"
                     }`}
+                    aria-label="Save to Wishlist"
                   >
-                    <Heart className={`w-5 h-5 ${isSaved ? "fill-[#E4C98A]" : ""}`} />
+                    <Heart className={`w-4 h-4 ${isSaved ? "fill-[#E4C98A]" : ""}`} />
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-[#7A7373] pt-1">
-                  <span className="flex items-center gap-1">
-                    <Truck className="w-3.5 h-3.5 text-[#C8A15A]" />
-                    <span>Delivery Across India</span>
-                  </span>
-
-                  <Link
-                    href={`/product/${product.slug}`}
-                    onClick={() => setQuickViewProduct(null)}
-                    className="text-[#3A080C] hover:text-[#C8A15A] font-semibold flex items-center gap-1 underline underline-offset-2"
-                  >
-                    <span>View Full Details</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
+                <Link
+                  href={`/product/${product.id}`}
+                  onClick={() => setQuickViewProduct(null)}
+                  className="w-full py-2.5 text-center text-xs text-[#1A0205] hover:text-[#C8A15A] hover:underline font-light flex items-center justify-center gap-1 transition-colors"
+                >
+                  <span>View Full Product Details</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
               </div>
             </div>
           </div>

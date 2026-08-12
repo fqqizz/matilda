@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Cormorant_Garamond, Instrument_Serif, Manrope } from "next/font/google";
 import "./globals.css";
 import { StoreProvider } from "@/lib/context/StoreContext";
 import { Navbar } from "@/components/layout/Navbar";
@@ -8,6 +9,29 @@ import { CartDrawer } from "@/components/ui/CartDrawer";
 import { SearchModal } from "@/components/ui/SearchModal";
 import { QuickViewModal } from "@/components/ui/QuickViewModal";
 import { CustomCursor } from "@/components/ui/CustomCursor";
+
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
+  display: "swap",
+});
+
+const instrument = Instrument_Serif({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-instrument",
+  display: "swap",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-manrope",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://matildajewellery.com"),
@@ -53,8 +77,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="font-sans bg-[#FFFDF9] text-[#191414] antialiased min-h-screen flex flex-col justify-between selection:bg-[#3A080C] selection:text-[#E4C98A]">
+    <html
+      lang="en"
+      className={`${cormorant.variable} ${instrument.variable} ${manrope.variable}`}
+    >
+      <body className="font-sans bg-[#FFFDF9] text-[#191414] antialiased min-h-screen flex flex-col justify-between selection:bg-[#1A0205] selection:text-[#E4C98A]">
         <StoreProvider>
           <Preloader />
           <CustomCursor />

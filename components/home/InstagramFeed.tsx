@@ -39,13 +39,13 @@ export const InstagramFeed = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         
         {/* Header with Direct Instagram Link */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#EFE3D2]/60 pb-6">
-          <div className="space-y-2">
-            <span className="text-[10px] uppercase tracking-[0.35em] text-[#C8A15A] font-semibold block">
-              Editorial Lookbook
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#EFE3D2]/50 pb-6">
+          <div className="space-y-1.5">
+            <span className="text-[10px] uppercase tracking-[0.18em] text-[#C8A15A] font-sans font-medium block">
+              Lookbook
             </span>
             <h2 className="font-serif text-2xl sm:text-4xl font-normal text-[#1A0205]">
-              As Styled by the Community
+              As styled by you.
             </h2>
           </div>
 
@@ -53,7 +53,7 @@ export const InstagramFeed = () => {
             href="https://www.instagram.com/matilldaaa._/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FAF6F0] border border-[#EFE3D2] text-[#1A0205] text-[11px] uppercase tracking-[0.2em] font-medium hover:bg-[#1A0205] hover:text-[#E4C98A] transition-all self-start sm:self-auto"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FAF6F0] border border-[#EFE3D2] text-[#1A0205] text-[11px] uppercase tracking-[0.14em] font-sans font-medium hover:bg-[#1A0205] hover:text-[#E4C98A] transition-all self-start sm:self-auto"
           >
             <Instagram className="w-3.5 h-3.5" />
             <span>@matilldaaa._</span>
@@ -72,8 +72,8 @@ export const InstagramFeed = () => {
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-              className="group relative aspect-[3/4] rounded-sm overflow-hidden bg-[#FAF6F0] border border-[#EFE3D2] block"
+              transition={{ duration: 0.6, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+              className="group relative aspect-[3/4] rounded-sm overflow-hidden bg-[#FAF6F0] border border-[#EFE3D2]/60 block"
             >
               <Image
                 src={item.image}
@@ -89,7 +89,7 @@ export const InstagramFeed = () => {
                   <Instagram className="w-4 h-4 text-[#E4C98A]" />
                 </div>
                 <div className="space-y-0.5">
-                  <span className="text-[8.5px] uppercase tracking-[0.2em] text-[#E4C98A] font-light">
+                  <span className="text-[8.5px] uppercase tracking-[0.14em] font-sans text-[#E4C98A] font-light">
                     {item.tag}
                   </span>
                   <p className="text-[11px] font-serif text-[#FFFDF9] line-clamp-2">
