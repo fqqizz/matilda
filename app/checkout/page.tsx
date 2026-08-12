@@ -116,9 +116,9 @@ export default function CheckoutPage() {
     setErrorMsg("");
 
     // Simulate isolated gateway verification latency
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
-        const order = createOrder({
+        const order = await createOrder({
           customer,
           shippingAddress,
           paymentMethod,

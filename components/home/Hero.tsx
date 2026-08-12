@@ -6,6 +6,9 @@ import { ArrowRight } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useStore } from "@/lib/context/StoreContext";
 
+// Editorial luxury motion curve
+const luxuryEase = [0.16, 1, 0.3, 1];
+
 export const Hero = () => {
   const { isPreloaderComplete } = useStore();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -19,23 +22,23 @@ export const Hero = () => {
   const textY = useTransform(scrollYProgress, [0, 1], [0, 45]);
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
-  // Motion variants triggered sequentially
+  // Motion variants triggered sequentially with smooth GPU transform
   const containerVariants = {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: 0.18,
-        delayChildren: 0.1,
+        staggerChildren: 0.16,
+        delayChildren: 0.08,
       },
     },
   };
 
   const line1Variants = {
-    hidden: { opacity: 0, y: 35 },
+    hidden: { opacity: 0, y: 24 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 0.95, ease: luxuryEase },
     },
   };
 
@@ -44,32 +47,32 @@ export const Hero = () => {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 0.9, ease: luxuryEase },
     },
   };
 
   const line3Variants = {
-    hidden: { opacity: 0, y: 35 },
+    hidden: { opacity: 0, y: 24 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 0.95, ease: luxuryEase },
     },
   };
 
   const ctaVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 18 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 0.85, ease: luxuryEase },
     },
   };
 
   return (
     <section
       ref={containerRef}
-      className="relative min-h-[92vh] sm:min-h-[96vh] bg-[#1A0205] text-[#FFFDF9] flex items-center justify-center overflow-hidden font-sans"
+      className="relative min-h-[92vh] sm:min-h-[96vh] bg-[#1A0205] text-[#FFFDF9] flex items-center justify-center overflow-hidden font-sans select-none"
     >
       {/* ── CINEMATIC BACKGROUND FILM ── */}
       <motion.div style={{ scale: videoScale }} className="absolute inset-0 z-0 pointer-events-none">
@@ -101,7 +104,7 @@ export const Hero = () => {
           className="max-w-4xl w-full"
         >
           {/* Eyebrow: Quiet Brand Attribution */}
-          <motion.div variants={line2Variants} className="mb-6 sm:mb-8 pt-2">
+          <motion.div variants={line2Variants} className="mb-6 sm:mb-8 pt-1 pl-0.5">
             <div className="inline-flex items-center gap-2 text-[#E4C98A]/85 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] font-light">
               <span>MATILDA</span>
               <span className="text-[#C8A15A]/40">•</span>
@@ -109,33 +112,33 @@ export const Hero = () => {
             </div>
           </motion.div>
 
-          {/* ── HIGH-FASHION EDITORIAL HEADLINE WITH DEDICATED SPACING BOXES ── */}
-          <div className="space-y-3 sm:space-y-4 text-[#FFFDF9] mb-8 sm:mb-10">
+          {/* ── HIGH-FASHION EDITORIAL HEADLINE WITH MATHEMATICALLY BALANCED SPACING ── */}
+          <div className="text-[#FFFDF9] mb-8 sm:mb-10 pl-0.5">
             
-            {/* Line 1: JEWELS (Ample top & left safe padding, zero clipping) */}
-            <motion.div variants={line1Variants} className="pt-1 pb-1 pl-0.5">
-              <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-normal tracking-tight leading-[1.05] block text-[#FFFDF9]">
+            {/* Line 1: JEWELS (Spacious, elegant serif heading, zero clipping) */}
+            <motion.div variants={line1Variants} className="pt-0.5 pb-1">
+              <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-normal tracking-tight leading-[1.02] block text-[#FFFDF9]">
                 JEWELS
               </h1>
             </motion.div>
 
-            {/* Line 2: FOR EVERY (Refined Instrument Serif editorial display, larger, perfectly spaced) */}
-            <motion.div variants={line2Variants} className="py-2 sm:py-3 pl-1 sm:pl-1.5">
-              <span className="font-editorial italic text-2xl sm:text-3xl md:text-4xl lg:text-5xl tracking-[0.12em] text-[#E4C98A] block leading-none">
+            {/* Line 2: for every (Harmoniously centered between JEWELS and version of you, larger display presence) */}
+            <motion.div variants={line2Variants} className="py-2.5 sm:py-3.5 md:py-4">
+              <span className="font-editorial italic text-2xl sm:text-3xl md:text-4xl lg:text-5xl tracking-[0.14em] text-[#E4C98A] block leading-none">
                 for every
               </span>
             </motion.div>
 
-            {/* Line 3: version of you. (Italic serif statement with distinct vertical room) */}
-            <motion.div variants={line3Variants} className="pt-1 pb-2 pl-0.5">
-              <div className="font-serif italic text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-light tracking-tight leading-[1.1] text-[#EFE3D2]">
+            {/* Line 3: version of you. (Italic serif statement with matched left alignment) */}
+            <motion.div variants={line3Variants} className="pt-1 pb-2">
+              <div className="font-serif italic text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-light tracking-tight leading-[1.08] text-[#EFE3D2]">
                 version of you.
               </div>
             </motion.div>
           </div>
 
           {/* ── SINGLE REFINED LUXURY CTA ── */}
-          <motion.div variants={ctaVariants} className="pt-2">
+          <motion.div variants={ctaVariants} className="pt-2 pl-0.5">
             <Link
               href="/shop"
               className="inline-flex items-center gap-3 px-8 py-3.5 bg-[#C8A15A] text-[#1A0205] font-sans font-medium text-xs uppercase tracking-[0.16em] hover:bg-[#E4C98A] transition-all duration-300 shadow-luxury group"

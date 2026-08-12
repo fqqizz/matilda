@@ -1,85 +1,125 @@
-# MATILDA JEWELLERY — PRODUCTION SETUP & HANDOFF GUIDE
-**Founder & Creative Director:** Duha Ajaz Pandith  
-**Brand Identity:** MATILDA by Duha Ajaz Pandith  
-**Official Instagram:** [@matilldaaa._](https://www.instagram.com/matilldaaa._/)  
-**Direct Contact / WhatsApp:** +91 95411 98330  
-**Positioning Statement:** *"Timeless silhouettes offering the look of fine jewellery at a fraction of the cost. Delivery across India."*
+# MATILDA — Official Production Setup & Architecture Guide
+
+Welcome to **MATILDA by Duha Ajaz Pandith**. This document details the exact configuration steps required to connect your Supabase production database, cloud storage bucket, payment gateway, and administrative credentials.
 
 ---
 
-## 1. OVERVIEW OF BUILT PLATFORM
+## 1. Environment Variables Configuration
 
-MATILDA has been crafted as a quiet-luxury, feminine editorial ecommerce experience built with:
-- **Frontend & App Architecture:** Next.js 14 (App Router) + TypeScript + Tailwind CSS
-- **Design Tokens:** Deep Burgundy (`#3A080C`), Wine/Maroon (`#5A1118`), Dark Wine (`#260407`), Warm Gold (`#C8A15A`), Champagne Gold (`#E4C98A`), Ivory (`#F7F1E8`), Warm Cream (`#EFE3D2`), Charcoal (`#191414`)
-- **Typography:** *Cormorant Garamond* (Editorial Serif) + *Inter* (UI Sans) + *Marck Script* (Founder Signature Accent)
-- **Authentic Brand Assets:** Primary transparent leopard script mark, secondary cream mark, and real seed product data (Waist Chains, Gothic Star Pendant, Keepsake Heart, Tulip Bracelet, Enamel Bangles, MATILDA MEN Cross-Link, Marathi Nose Rings).
-- **Core Commerce Systems:**
-  - Mask-wipe cinematic preloader
-  - Instant full-screen search overlay with auto-complete
-  - Interactive catalogue with category filtering, price slider, and sorting
-  - Sticky Product Detail Page (PDP) with image zoom and customer star ratings & verified reviews
-  - Slide-out Cart Drawer with Pan-India free shipping progress bar
-  - 4-Step Checkout with India pin code validation
-  - Isolated Razorpay payment integration architecture (Test Mode & Live Ready)
-  - Real-time Order Confirmation, Tracking timeline, and WhatsApp order sharing
-  - Real Authenticated Admin Panel (`/admin`) with zero fake data calculations, product CRUD, order status updater, inventory stock editor, and customer reviews.
+Create a file named `.env.local` in the project root (or set these in your **Vercel Project Settings → Environment Variables**):
 
----
+```bash
+# ── SUPABASE (Production Database & Storage) ──
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-## 2. REQUIRED BEFORE LAUNCH (CHECKLIST)
+# Server-Side Only Service Role Key (Never expose to client)
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-### A. Admin Authentication Passcode
-1. The default master passcode for the `/admin` portal is currently set to: **`1234`**.
-2. To change this before production deployment, update the passcode check inside [`app/admin/layout.tsx`](file:///C:/Users/faaiz/.gemini/antigravity-ide/scratch/matilda-jewellery/app/admin/layout.tsx) or set an environment variable `ADMIN_PASSCODE`.
+# ── ADMIN AUTHENTICATION (Server-Side Only) ──
+ADMIN_PASSWORD=Duha@matilda12
+ADMIN_SESSION_SECRET=matilda_super_secret_session_hmac_signing_key_2026
 
-### B. Razorpay Live Payment Gateway Integration
-The checkout is architected with an isolated Razorpay bridge.
-1. Sign up at [Razorpay Dashboard](https://dashboard.razorpay.com/) and complete KYC.
-2. In Razorpay Settings → API Keys, generate your **Key ID** and **Key Secret**.
-3. Create a `.env.local` file in your repository:
-   ```env
-   NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxxx
-   RAZORPAY_KEY_SECRET=your_secret_key_here
-   ```
-4. You can also toggle between Test Mode and Live Mode directly inside **Admin Portal → Store Settings**.
+# ── RAZORPAY PAYMENT GATEWAY ──
+# (Leave blank or in Test Mode until ready for live payments)
+RAZORPAY_KEY_ID=rzp_test_XXXXXXXXXXXX
+RAZORPAY_KEY_SECRET=your_razorpay_secret_key
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_XXXXXXXXXXXX
 
-### C. Domain & Production Hosting (Vercel)
-1. Push the repository to GitHub.
-2. Import the repository into [Vercel](https://vercel.com).
-3. Connect your custom domain (e.g. `matildajewellery.com` or `shopmatilda.in`) under Vercel Domain Settings.
-4. Add DNS records (A record pointing to `76.76.21.21` and CNAME `cname.vercel-dns.com`).
+# ── SITE METADATA ──
+NEXT_PUBLIC_SITE_URL=https://matilda-jewellery.vercel.app
+```
 
-### D. Logistics & Shipping Integration
-- Orders currently default to Pan-India Express Courier (Delhivery / BlueDart / DTDC) with estimated dispatch within 24 hours.
-- To connect automated label generation, integrate Shiprocket or Delhivery One API webhooks to auto-generate tracking numbers.
+> [!IMPORTANT]
+> **Security Rule**: `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PASSWORD`, and `RAZORPAY_KEY_SECRET` must **never** be prefixed with `NEXT_PUBLIC_` or placed in client components. The system uses server API endpoints (`/api/admin/*`) with timing-safe comparison and HMAC-signed httpOnly session cookies.
 
 ---
 
-## 3. STORE CATALOGUE & INVENTORY MANAGEMENT
+## 2. Supabase Database & Storage Setup
 
-### Adding & Editing Products
-1. Navigate to `/admin/products`.
-2. Click **Add Product** to create a new piece with photos, title, description, category, price, SKU, and stock.
-3. Use the **Edit** action to update prices or toggle `Featured`, `New Arrival`, or `Best Seller` badges.
-
-### Managing Orders & Customer Communication
-1. Navigate to `/admin/orders`.
-2. When a customer places an order, click **Inspect** to see their full address and click **WhatsApp Customer** to initiate immediate confirmation.
-3. Update fulfillment status from `Processing` → `Shipped` and add the courier tracking waybill number.
-
-### Managing Stock & Low-Stock Alerts
-1. Navigate to `/admin/inventory`.
-2. The dashboard automatically flags pieces with fewer than 5 units as `Low Stock` and highlights `Out of Stock` items.
+### Step A: Create Supabase Project
+1. Log in to [Supabase](https://supabase.com) and click **New Project**.
+2. Name the project `matilda-jewellery`, select your region (e.g. *South Asia - Mumbai*), and set a secure database password.
+3. In **Project Settings → API**, copy:
+   - **Project URL** -> `NEXT_PUBLIC_SUPABASE_URL`
+   - **Project API Keys (anon public)** -> `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - **Project API Keys (service_role secret)** -> `SUPABASE_SERVICE_ROLE_KEY`
 
 ---
 
-## 4. OPTIONAL FUTURE ENHANCEMENTS
-
-1. **Live Instagram Feed API:** Connect the Instagram Basic Display Graph API to automatically stream feed posts from `@matilldaaa._`.
-2. **Automated WhatsApp Business Notifications:** Connect the Meta WhatsApp Cloud API via Gupshup/Interakt to trigger instant automated WhatsApp order confirmation messages.
-3. **Database Migration (Supabase / PostgreSQL):** Transition from browser storage to a serverless PostgreSQL database (Supabase / Neon) using Prisma or Drizzle ORM when order volume scales beyond 500+ orders/month.
+### Step B: Run SQL Migrations
+1. In your Supabase dashboard, navigate to **SQL Editor** on the left menu.
+2. Open [supabase/migrations/001_schema.sql](file:///C:/Users/faaiz/Downloads/matilda/supabase/migrations/001_schema.sql) and click **Run**.
+3. Open [supabase/migrations/002_matilda_production.sql](file:///C:/Users/faaiz/Downloads/matilda/supabase/migrations/002_matilda_production.sql) and click **Run**.
+4. This will set up:
+   - `products` & `product_images`
+   - `categories` & `collections`
+   - `orders` & `order_items` (with historical snapshots)
+   - `product_reviews` & `site_settings`
+   - Row Level Security (RLS) policies and performance indexes.
 
 ---
 
-*MATILDA by Duha Ajaz Pandith • Timeless silhouettes. Made to become yours.*
+### Step C: Create the Storage Bucket for Product Imagery
+1. In Supabase dashboard, navigate to **Storage** → **New Bucket**.
+2. Set **Bucket Name**: `product-images`
+3. Toggle **Public Bucket**: `ON` (Checked / True)
+4. Allowed MIME types: `image/jpeg, image/png, image/webp, image/jpg`
+5. Maximum file size: `15MB`
+6. Click **Save Bucket**.
+
+---
+
+## 3. Product Image Management Architecture
+
+The MATILDA CMS utilizes a zero-base64, cloud-storage architecture:
+
+```
+Mobile Camera / Desktop File Picker
+               ↓
+FormData sent to /api/admin/upload-image
+               ↓
+Server validates and uploads binary to Supabase Storage ('product-images')
+               ↓
+Returns public image URL and storage_path
+               ↓
+Stored into 'product_images' table linked to product row
+               ↓
+Served via CDN to storefront visitors
+```
+
+### Key CMS Capabilities:
+- **Multiple Image Uploads**: Select multiple high-res photos directly from mobile photo library or desktop.
+- **Drag & Reorder**: Rearrange images with left/right reorder controls.
+- **Set as Cover**: Designate any photo as the primary product cover.
+- **Clean Image Deletion**: Removing a photo removes the database reference and deletes the object from Supabase Storage (preventing orphaned files).
+- **External URL Support**: Paste external image URLs whenever needed.
+
+---
+
+## 4. Administrative Access & Security
+
+- **Admin Route**: `/admin` (strictly hidden from public navigation, sitemaps, and footers).
+- **Authentication**:
+  - Enter the administrative password (`Duha@matilda12`).
+  - Validated server-side in [app/api/admin/login/route.ts](file:///C:/Users/faaiz/Downloads/matilda/app/api/admin/login/route.ts) with timing-safe comparison.
+  - Sets an `httpOnly`, `secure`, `sameSite: "strict"` HMAC-signed session cookie.
+
+---
+
+## 5. Payments & Orders
+
+- **Razorpay Integration**:
+  - In [Admin Portal → Store Settings](http://localhost:3006/admin/settings), you can toggle between **Test Mode** and **Live Mode**.
+  - Test mode allows simulating successful orders without charging a card.
+  - Live orders require `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`.
+- **Historical Order Snapshots**:
+  - Customer details, shipping addresses, prices, and product image URLs are snapshotted in `orders` and `order_items` at purchase time, ensuring historical receipts are never altered if a product is modified or deleted.
+
+---
+
+## 6. Official Brand Attributes
+- **Brand**: `MATILDA`
+- **Founder Attribution**: `by Duha Ajaz Pandith`
+- **Official Instagram**: `@matilldaaa._` ([https://www.instagram.com/matilldaaa._/](https://www.instagram.com/matilldaaa._/))
+- **WhatsApp Concierge**: `+91 95411 98330`

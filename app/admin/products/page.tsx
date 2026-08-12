@@ -16,39 +16,43 @@ import {
   Star,
   Camera,
   Link as LinkIcon,
-  GripVertical,
   Upload,
-  RotateCcw,
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// ──────────────────────────────────────────────────────
-// Image upload state per-slot
-// Base64 is ONLY used for local preview.
-// In production: upload to Supabase Storage → save URL.
-// ──────────────────────────────────────────────────────
 interface ImageSlot {
-  /** URL stored in the product (Supabase Storage path or public URL) */
+  id: string;
   url: string;
-  /** Temporary base64 preview — never persisted to DB */
+  storagePath?: string;
   previewSrc?: string;
-  /** Whether currently uploading to Supabase */
-  uploading?: boolean;
-  /** Upload error message */
+  isUploading?: boolean;
   error?: string;
 }
 
 export default function AdminProductsPage() {
   const { products, categories, addProduct, updateProduct, deleteProduct } = useStore();
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // File & URL inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const urlInputRef = useRef<HTMLInputElement>(null);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [pendingUrl, setPendingUrl] = useState("");
+  
+  // Deletion confirm modal
+  const [deleteTargetProduct, setDeleteTargetProduct] = useState<Product | null>(null);
+  const [deleteTargetImageIndex, setDeleteTargetImageIndex] = useState<number | null>(null);
 
-  // Form State
+  // Product Form State
   const [name, setName] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [category, setCategory] = useState("Necklaces & Pendants");
@@ -64,12 +68,15 @@ export default function AdminProductsPage() {
   const [sku, setSku] = useState("");
   const [imageSlots, setImageSlots] = useState<ImageSlot[]>([]);
 
-  const filtered = products.filter(
-    (p) =>
+  const filtered = products.filter((p) => {
+    const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      p.sku.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategoryFilter === "all" || p.category === selectedCategoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
   const resetForm = () => {
     setName("");
@@ -106,10 +113,16 @@ export default function AdminProductsPage() {
     setDescription(p.description);
     setMaterials(p.materials);
     setStock(p.stock);
-    setImageSlots(p.images.map((url) => ({ url })));
-    setIsFeatured(!!p.isFeatured);
-    setIsNewArrival(!!p.isNewArrival);
-    setIsBestSeller(!!p.isBestSeller);
+    setImageSlots(
+      p.images.map((url, i) => ({
+        id: `existing-${i}-${Date.now()}`,
+        url,
+        storagePath: url.includes("/product-images/") ? url.split("/product-images/")[1] : undefined,
+      }))
+    );
+    setIsFeatured(Boolean(p.isFeatured));
+    setIsNewArrival(Boolean(p.isNewArrival));
+    setIsBestSeller(Boolean(p.isBestSeller));
     setIsPublished(p.isPublished);
     setSku(p.sku);
     setShowUrlInput(false);
@@ -117,70 +130,109 @@ export default function AdminProductsPage() {
     setIsModalOpen(true);
   };
 
-  // ── IMAGE HANDLERS ──────────────────────────────────
-
-  /** Handle file picker selection — creates base64 preview, marks as needs-upload */
-  const handleFileSelect = useCallback((files: FileList | null) => {
+  // ── REAL IMAGE UPLOAD HANDLER ────────────────────────
+  const handleFileSelect = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    Array.from(files).forEach((file) => {
-      if (!file.type.startsWith("image/")) return;
-      if (file.size > 10 * 1024 * 1024) {
-        alert(`${file.name} exceeds 10MB. Please compress before uploading.`);
-        return;
+    const newFiles = Array.from(files);
+
+    for (const file of newFiles) {
+      if (!file.type.startsWith("image/")) continue;
+      if (file.size > 15 * 1024 * 1024) {
+        alert(`${file.name} exceeds 15MB. Please choose a smaller image.`);
+        continue;
       }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const previewSrc = e.target?.result as string;
-        const tempSlot: ImageSlot = {
-          url: "", // Will be set after Supabase Storage upload
-          previewSrc,
-          uploading: false,
-          error: undefined,
-        };
+      const tempId = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const previewUrl = URL.createObjectURL(file);
 
-        setImageSlots((prev) => {
-          if (prev.length >= 6) return prev;
-          return [...prev, tempSlot];
+      // 1. Add placeholder slot with loading spinner
+      setImageSlots((prev) => [
+        ...prev,
+        {
+          id: tempId,
+          url: "",
+          previewSrc: previewUrl,
+          isUploading: true,
+        },
+      ]);
+
+      // 2. Perform real upload to Supabase Storage API
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", "products");
+
+        const res = await fetch("/api/admin/upload-image", {
+          method: "POST",
+          body: formData,
         });
 
-        // TODO (Supabase integration): After connecting Supabase Storage,
-        // upload the file here and set slot.url to the returned storage path.
-        // setImageSlots(prev => prev.map(s =>
-        //   s.previewSrc === previewSrc
-        //     ? { ...s, uploading: true }
-        //     : s
-        // ));
-        // const { data, error } = await supabase.storage
-        //   .from('product-images').upload(`${productId}/${file.name}`, file);
-        // if (data) { setImageSlots(prev => prev.map(s =>
-        //   s.previewSrc === previewSrc ? { ...s, url: data.path, uploading: false } : s
-        // )); }
-      };
-      reader.readAsDataURL(file);
-    });
+        const data = await res.json();
+
+        if (res.ok && data.url) {
+          setImageSlots((prev) =>
+            prev.map((slot) =>
+              slot.id === tempId
+                ? {
+                    ...slot,
+                    url: data.url,
+                    storagePath: data.storage_path,
+                    isUploading: false,
+                  }
+                : slot
+            )
+          );
+        } else {
+          setImageSlots((prev) =>
+            prev.map((slot) =>
+              slot.id === tempId
+                ? { ...slot, isUploading: false, error: data.error || "Upload failed" }
+                : slot
+            )
+          );
+        }
+      } catch (err: any) {
+        setImageSlots((prev) =>
+          prev.map((slot) =>
+            slot.id === tempId
+              ? { ...slot, isUploading: false, error: "Network upload error" }
+              : slot
+          )
+        );
+      }
+    }
   }, []);
 
-  /** Add an image by URL */
+  /** Add an image by external URL */
   const handleAddUrl = () => {
     const trimmed = pendingUrl.trim();
     if (!trimmed) return;
-    if (imageSlots.length >= 6) return;
-    setImageSlots((prev) => [...prev, { url: trimmed }]);
+    setImageSlots((prev) => [
+      ...prev,
+      {
+        id: `url-${Date.now()}`,
+        url: trimmed,
+      },
+    ]);
     setPendingUrl("");
     setShowUrlInput(false);
   };
 
-  /** Remove image at index */
-  const removeImage = (index: number) => {
-    // TODO (Supabase): If slot.url is a Supabase Storage path, delete it here.
-    // await supabase.storage.from('product-images').remove([slot.url]);
-    setImageSlots((prev) => prev.filter((_, i) => i !== index));
+  /** Set cover image (moves to slot 0) */
+  const setCoverImage = (index: number) => {
+    if (index === 0) return;
+    setImageSlots((prev) => {
+      const arr = [...prev];
+      const [item] = arr.splice(index, 1);
+      arr.unshift(item);
+      return arr;
+    });
   };
 
-  /** Move image left (reorder) */
+  /** Move image left/right */
   const moveImage = (from: number, to: number) => {
+    if (to < 0 || to >= imageSlots.length) return;
     setImageSlots((prev) => {
       const arr = [...prev];
       const [item] = arr.splice(from, 1);
@@ -189,482 +241,643 @@ export default function AdminProductsPage() {
     });
   };
 
-  // ── SAVE ────────────────────────────────────────────
+  /** Confirm and delete single image */
+  const executeDeleteImage = async (index: number) => {
+    const targetSlot = imageSlots[index];
+    if (!targetSlot) return;
 
-  const handleSave = (e: React.FormEvent) => {
+    // Delete remote storage object if applicable
+    if (targetSlot.storagePath || targetSlot.url) {
+      try {
+        await fetch("/api/admin/delete-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            storage_path: targetSlot.storagePath,
+            image_url: targetSlot.url,
+          }),
+        });
+      } catch (err) {
+        console.warn("Storage deletion error:", err);
+      }
+    }
+
+    setImageSlots((prev) => prev.filter((_, i) => i !== index));
+    setDeleteTargetImageIndex(null);
+  };
+
+  /** Delete all images */
+  const handleDeleteAllImages = async () => {
+    if (!window.confirm("Are you sure you want to remove all images for this piece?")) return;
+
+    for (const slot of imageSlots) {
+      if (slot.storagePath || slot.url) {
+        try {
+          await fetch("/api/admin/delete-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              storage_path: slot.storagePath,
+              image_url: slot.url,
+            }),
+          });
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    setImageSlots([]);
+  };
+
+  // ── SAVE PRODUCT ────────────────────────────────────
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+
+    setIsSaving(true);
 
     const slug = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)+/g, "");
 
-    // Build final images array.
-    // previewSrc (base64) is ONLY used for local display — not persisted.
-    // In production, imageSlots with no url (only previewSrc) should have been
-    // uploaded to Supabase Storage before reaching this point, and url set.
+    // Extract valid URLs from slots (never base64)
     const finalImages = imageSlots
-      .map((slot) => slot.url || slot.previewSrc || "")
-      .filter(Boolean);
+      .map((slot) => slot.url)
+      .filter((u) => Boolean(u) && !u.startsWith("data:"));
 
     if (finalImages.length === 0) {
       finalImages.push("/images/golden-waist-chain.png");
     }
 
-    if (editingProduct) {
-      updateProduct({
-        ...editingProduct,
-        name,
-        slug,
-        subtitle,
-        category,
-        price: Number(price),
-        originalPrice: Number(originalPrice),
-        description,
-        materials,
-        stock: Number(stock),
-        images: finalImages,
-        isFeatured,
-        isNewArrival,
-        isBestSeller,
-        isPublished,
-        sku,
-      });
-    } else {
-      addProduct({
-        name,
-        slug,
-        subtitle,
-        category,
-        price: Number(price),
-        originalPrice: Number(originalPrice),
-        description,
-        longDescription: description,
-        details: [
-          "Comfort-tested for daily wear",
-          "Delivery across India in MATILDA packaging",
-        ],
-        materials,
-        images: finalImages,
-        stock: Number(stock),
-        isFeatured,
-        isNewArrival,
-        isBestSeller,
-        isPublished,
-        sku,
-      });
+    try {
+      if (editingProduct) {
+        await updateProduct({
+          ...editingProduct,
+          name,
+          slug,
+          subtitle,
+          category,
+          price: Number(price),
+          originalPrice: Number(originalPrice),
+          description,
+          materials,
+          stock: Number(stock),
+          images: finalImages,
+          isFeatured,
+          isNewArrival,
+          isBestSeller,
+          isPublished,
+          sku,
+        });
+      } else {
+        await addProduct({
+          name,
+          slug,
+          subtitle,
+          category,
+          price: Number(price),
+          originalPrice: Number(originalPrice),
+          description,
+          longDescription: description,
+          details: [
+            "Crafted with signature MATILDA finish",
+            "Comfort-tested for daily wear",
+            "Dispatches within 24 hours across India",
+          ],
+          materials,
+          images: finalImages,
+          stock: Number(stock),
+          isFeatured,
+          isNewArrival,
+          isBestSeller,
+          isPublished,
+          sku,
+        });
+      }
+      setIsModalOpen(false);
+    } catch (err: any) {
+      alert("Failed to save product: " + (err?.message || "Unknown error"));
+    } finally {
+      setIsSaving(false);
     }
-
-    setIsModalOpen(false);
   };
 
-  const handleDelete = (id: string, prodName: string) => {
-    if (window.confirm(`Delete "${prodName}" from the catalogue?`)) {
-      deleteProduct(id);
-    }
+  /** Toggle publish status directly from list */
+  const togglePublishStatus = async (p: Product) => {
+    await updateProduct({
+      ...p,
+      isPublished: !p.isPublished,
+    });
   };
 
-  // ── RENDER ───────────────────────────────────────────
+  /** Delete product */
+  const confirmDeleteProduct = async () => {
+    if (!deleteTargetProduct) return;
+    await deleteProduct(deleteTargetProduct.id);
+    setDeleteTargetProduct(null);
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 font-sans">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EFE3D2] pb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E8E0D5] pb-6">
         <div>
-          <span className="text-[10px] uppercase tracking-[0.25em] text-[#C8A15A] font-bold">
-            Catalogue Management
-          </span>
-          <h1 className="font-serif text-3xl font-bold text-[#3A080C]">
-            Products ({products.length})
+          <h1 className="font-serif text-3xl sm:text-4xl text-[#1A0205] font-normal">
+            Products & Catalogue
           </h1>
+          <p className="text-xs text-[#7A7373] mt-1">
+            Manage jewellery pieces, real-time inventory stock, pricing, and high-resolution product imagery.
+          </p>
+        </div>
+        <button
+          onClick={openCreateModal}
+          className="inline-flex items-center gap-2 px-5 py-3 bg-[#1A0205] text-[#E4C98A] text-xs uppercase tracking-[0.16em] font-medium hover:bg-[#260407] transition-all shadow-sm"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add New Piece</span>
+        </button>
+      </div>
+
+      {/* Controls Bar */}
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7A7373]" />
+          <input
+            type="text"
+            placeholder="Search by name, SKU, or category..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E8E0D5] rounded-xs text-xs text-[#191414] placeholder-[#7A7373] focus:outline-none focus:border-[#C8A15A]"
+          />
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-[#7A7373] absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products..."
-              className="pl-8 pr-3 py-2 bg-white border border-[#EFE3D2] rounded text-xs text-[#191414] focus:outline-none focus:border-[#C8A15A]"
-            />
-          </div>
-
+        {/* Category Filter */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
           <button
-            onClick={openCreateModal}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#3A080C] text-[#E4C98A] text-xs uppercase tracking-wider font-semibold rounded hover:bg-[#5A1118] transition-colors shadow-sm"
+            onClick={() => setSelectedCategoryFilter("all")}
+            className={`px-3 py-1.5 text-[11px] uppercase tracking-wider rounded-xs font-medium whitespace-nowrap transition-colors ${
+              selectedCategoryFilter === "all"
+                ? "bg-[#1A0205] text-[#E4C98A]"
+                : "bg-white border border-[#E8E0D5] text-[#7A7373] hover:text-[#191414]"
+            }`}
           >
-            <Plus className="w-4 h-4" />
-            <span>Add Product</span>
+            All Categories ({products.length})
           </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategoryFilter(cat.name)}
+              className={`px-3 py-1.5 text-[11px] uppercase tracking-wider rounded-xs font-medium whitespace-nowrap transition-colors ${
+                selectedCategoryFilter === cat.name
+                  ? "bg-[#1A0205] text-[#E4C98A]"
+                  : "bg-white border border-[#E8E0D5] text-[#7A7373] hover:text-[#191414]"
+              }`}
+            >
+              {cat.name}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Products Table */}
-      <div className="bg-white rounded border border-[#EFE3D2] overflow-hidden">
+      <div className="bg-white border border-[#E8E0D5] rounded-xs shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-[#EFE3D2] bg-[#FAF6F0] text-[#7A7373] uppercase tracking-wider text-[10px]">
-                <th className="p-3">Piece</th>
-                <th className="p-3">Category</th>
-                <th className="p-3">Price</th>
-                <th className="p-3">Stock</th>
-                <th className="p-3">Reviews</th>
-                <th className="p-3">Status</th>
-                <th className="p-3 text-right">Actions</th>
+            <thead className="bg-[#FAF6F0] border-b border-[#E8E0D5] text-[10px] uppercase tracking-[0.16em] text-[#7A7373]">
+              <tr>
+                <th className="py-3.5 px-4 font-medium">Piece</th>
+                <th className="py-3.5 px-4 font-medium">Category</th>
+                <th className="py-3.5 px-4 font-medium">Price</th>
+                <th className="py-3.5 px-4 font-medium">Stock</th>
+                <th className="py-3.5 px-4 font-medium">Status</th>
+                <th className="py-3.5 px-4 font-medium">Featured</th>
+                <th className="py-3.5 px-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F7F1E8]">
-              {filtered.map((p) => (
-                <tr key={p.id} className="hover:bg-[#FAF6F0]">
-                  <td className="p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-12 h-12 rounded bg-[#FAF6F0] overflow-hidden border border-[#EFE3D2] shrink-0">
-                        <Image
-                          src={p.images[0] || "/images/golden-waist-chain.png"}
-                          alt={p.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-serif font-bold text-sm text-[#3A080C]">{p.name}</p>
-                        <p className="text-[10px] text-[#7A7373]">SKU: {p.sku}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-3 text-[#191414]">{p.category}</td>
-                  <td className="p-3">
-                    <span className="font-bold text-[#3A080C]">{formatINR(p.price)}</span>
-                    {p.originalPrice && p.originalPrice > p.price && (
-                      <span className="text-[10px] text-[#7A7373] line-through ml-1.5">
-                        {formatINR(p.originalPrice)}
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                        p.stock > 5
-                          ? "bg-emerald-50 text-emerald-700"
-                          : p.stock > 0
-                          ? "bg-amber-50 text-amber-700"
-                          : "bg-red-50 text-red-700"
-                      }`}
-                    >
-                      {p.stock > 0 ? `${p.stock} units` : "Out of stock"}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    {p.reviewCount > 0 ? (
-                      <div className="flex items-center gap-1 text-[#C8A15A]">
-                        <Star className="w-3.5 h-3.5 fill-[#C8A15A]" />
-                        <span className="font-bold text-[#191414]">{p.rating.toFixed(1)}</span>
-                        <span className="text-[10px] text-[#7A7373]">({p.reviewCount})</span>
-                      </div>
-                    ) : (
-                      <span className="text-[10px] text-[#7A7373]">No reviews</span>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                        p.isPublished ? "bg-[#3A080C]/10 text-[#3A080C]" : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {p.isPublished ? "Live" : "Draft"}
-                    </span>
-                  </td>
-                  <td className="p-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => openEditModal(p)}
-                        className="p-1.5 rounded text-[#3A080C] hover:bg-[#FAF6F0] transition-colors"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p.id, p.name)}
-                        className="p-1.5 rounded text-red-600 hover:bg-red-50 transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
+            <tbody className="divide-y divide-[#E8E0D5]/70">
+              {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-[#7A7373] text-xs">
-                    <Sparkles className="w-5 h-5 mx-auto mb-2 text-[#C8A15A]" />
-                    No products found.
+                  <td colSpan={7} className="py-12 text-center text-[#7A7373]">
+                    No jewellery pieces match your search.
                   </td>
                 </tr>
+              ) : (
+                filtered.map((p) => (
+                  <tr key={p.id} className="hover:bg-[#FAF6F0]/60 transition-colors">
+                    {/* Piece Thumbnail & Title */}
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-12 h-12 bg-[#FAF6F0] rounded-xs overflow-hidden shrink-0 border border-[#E8E0D5]">
+                          <Image
+                            src={p.images[0] || "/images/golden-waist-chain.png"}
+                            alt={p.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div>
+                          <p className="font-serif text-sm text-[#1A0205] font-normal line-clamp-1">
+                            {p.name}
+                          </p>
+                          <p className="text-[10px] text-[#7A7373] font-mono tracking-wider">
+                            {p.sku}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Category */}
+                    <td className="py-3 px-4 text-[#7A7373]">{p.category}</td>
+
+                    {/* Price */}
+                    <td className="py-3 px-4">
+                      <span className="font-serif text-sm text-[#1A0205] font-normal">
+                        {formatINR(p.price)}
+                      </span>
+                      {p.originalPrice && p.originalPrice > p.price && (
+                        <span className="ml-2 text-[10px] text-[#7A7373] line-through">
+                          {formatINR(p.originalPrice)}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Stock */}
+                    <td className="py-3 px-4">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                          p.stock > 5
+                            ? "bg-emerald-50 text-emerald-700"
+                            : p.stock > 0
+                            ? "bg-amber-50 text-amber-700"
+                            : "bg-red-50 text-red-700"
+                        }`}
+                      >
+                        {p.stock > 0 ? `${p.stock} in stock` : "Sold Out"}
+                      </span>
+                    </td>
+
+                    {/* Status Toggle */}
+                    <td className="py-3 px-4">
+                      <button
+                        onClick={() => togglePublishStatus(p)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xs text-[10px] uppercase tracking-wider font-medium transition-colors ${
+                          p.isPublished
+                            ? "bg-emerald-900/10 text-emerald-800 hover:bg-emerald-900/20"
+                            : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300"
+                        }`}
+                      >
+                        {p.isPublished ? (
+                          <>
+                            <Eye className="w-3 h-3 text-emerald-600" />
+                            <span>Live</span>
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="w-3 h-3 text-zinc-500" />
+                            <span>Hidden</span>
+                          </>
+                        )}
+                      </button>
+                    </td>
+
+                    {/* Featured */}
+                    <td className="py-3 px-4">
+                      {p.isFeatured ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-[#C8A15A] font-medium uppercase tracking-wider">
+                          <Star className="w-3 h-3 fill-[#C8A15A]" />
+                          <span>Featured</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-[#7A7373]">—</span>
+                      )}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="py-3 px-4 text-right">
+                      <div className="inline-flex items-center gap-1">
+                        <button
+                          onClick={() => openEditModal(p)}
+                          className="p-1.5 text-[#7A7373] hover:text-[#1A0205] transition-colors rounded-xs hover:bg-[#FAF6F0]"
+                          title="Edit product & images"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteTargetProduct(p)}
+                          className="p-1.5 text-[#7A7373] hover:text-red-600 transition-colors rounded-xs hover:bg-red-50"
+                          title="Delete piece"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* ── Create / Edit Modal ── */}
+      {/* ── CREATE / EDIT MODAL ───────────────────────── */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            />
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="relative z-10 w-full max-w-2xl bg-[#FFFDF9] rounded shadow-2xl border border-[#EFE3D2] p-6 sm:p-8 max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="bg-white border border-[#E8E0D5] w-full max-w-4xl max-h-[92vh] flex flex-col rounded-xs shadow-2xl overflow-hidden font-sans"
             >
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="absolute top-4 right-4 p-1.5 text-[#3A080C] hover:text-[#5A1118]"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="mb-6 space-y-1">
-                <span className="text-[10px] uppercase tracking-[0.25em] text-[#C8A15A] font-bold">
-                  {editingProduct ? "Update Piece" : "New Catalogue Entry"}
-                </span>
-                <h2 className="font-serif text-2xl font-bold text-[#3A080C]">
-                  {editingProduct ? `Edit "${editingProduct.name}"` : "Add New Jewellery Piece"}
-                </h2>
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E0D5] bg-[#FAF6F0]">
+                <div>
+                  <h2 className="font-serif text-2xl text-[#1A0205]">
+                    {editingProduct ? `Edit Piece: ${editingProduct.name}` : "Add New Jewellery Piece"}
+                  </h2>
+                  <p className="text-[11px] text-[#7A7373]">
+                    {editingProduct
+                      ? "Update imagery, specifications, stock, and pricing for this piece."
+                      : "Create a new jewellery listing in the MATILDA catalogue."}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-1.5 text-[#7A7373] hover:text-[#1A0205] transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <form onSubmit={handleSave} className="space-y-5 text-xs">
+              {/* Modal Body */}
+              <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-8">
                 
-                {/* ── PRODUCT IMAGES ── */}
-                <div>
-                  <label className="uppercase tracking-wider font-semibold text-[#3A080C] block mb-2">
-                    Product Images
-                    <span className="text-[10px] text-[#7A7373] normal-case tracking-normal ml-2">
-                      (First image = primary · drag to reorder · max 6)
-                    </span>
-                  </label>
+                {/* ── SECTION: PRODUCT IMAGES (REAL CMS MANAGER) ── */}
+                <div className="space-y-3 bg-[#FAF6F0]/80 border border-[#E8E0D5] p-5 rounded-xs">
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                    <div>
+                      <h3 className="text-xs uppercase tracking-[0.18em] text-[#1A0205] font-semibold">
+                        Product Photography ({imageSlots.length} images)
+                      </h3>
+                      <p className="text-[11px] text-[#7A7373]">
+                        The first image is the <strong>Cover / Primary Image</strong>. Click <em>Set as Cover</em> or use arrows to reorder.
+                      </p>
+                    </div>
 
-                  {/* Image slots preview strip */}
-                  <div className="flex flex-wrap gap-3 mb-3">
-                    {imageSlots.map((slot, index) => (
-                      <div key={index} className="relative group">
-                        <div className="relative w-20 h-20 rounded bg-[#FAF6F0] border-2 overflow-hidden shrink-0 border-[#EFE3D2] group-first:border-[#C8A15A]">
-                          {(slot.previewSrc || slot.url) && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={slot.previewSrc || slot.url}
-                              alt={`Image ${index + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                          {slot.uploading && (
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                              <Upload className="w-4 h-4 text-white animate-pulse" />
-                            </div>
-                          )}
-                          {index === 0 && (
-                            <div className="absolute bottom-0 inset-x-0 text-[8px] text-center bg-[#C8A15A] text-[#260407] font-bold py-0.5">
-                              PRIMARY
-                            </div>
-                          )}
-                        </div>
+                    <div className="flex items-center gap-2">
+                      {/* Hidden File Input supporting mobile picker & desktop */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/jpg"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => handleFileSelect(e.target.files)}
+                      />
 
-                        {/* Controls */}
-                        <div className="absolute -top-2 -right-2 hidden group-hover:flex items-center gap-0.5">
-                          {index > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => moveImage(index, index - 1)}
-                              className="w-5 h-5 rounded-full bg-[#3A080C] text-white flex items-center justify-center text-[9px] hover:bg-[#5A1118]"
-                              title="Move left"
-                            >
-                              ←
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700"
-                            title="Remove"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1A0205] text-[#E4C98A] text-[11px] uppercase tracking-wider font-medium hover:bg-[#260407] transition-all"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Upload Images</span>
+                      </button>
 
-                    {/* Add slot */}
-                    {imageSlots.length < 6 && (
-                      <div className="flex flex-col gap-1.5">
-                        {/* Camera / file picker (works on mobile too — opens camera or photo gallery) */}
+                      <button
+                        type="button"
+                        onClick={() => setShowUrlInput(!showUrlInput)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#E8E0D5] text-[#1A0205] text-[11px] uppercase tracking-wider font-medium hover:bg-[#FAF6F0] transition-all"
+                      >
+                        <LinkIcon className="w-3.5 h-3.5 text-[#C8A15A]" />
+                        <span>Add URL</span>
+                      </button>
+
+                      {imageSlots.length > 0 && (
                         <button
                           type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="w-20 h-20 rounded border-2 border-dashed border-[#C8A15A]/50 bg-[#FAF6F0] text-[#C8A15A] flex flex-col items-center justify-center gap-1 hover:border-[#C8A15A] hover:bg-[#F7F1E8] transition-colors"
-                          title="Upload from camera or photo library"
+                          onClick={handleDeleteAllImages}
+                          className="text-[10px] uppercase tracking-wider text-red-600 hover:text-red-700 font-medium px-2 py-1"
                         >
-                          <Camera className="w-4 h-4" />
-                          <span className="text-[8px] text-center leading-tight text-[#7A7373]">
-                            Camera / Gallery
-                          </span>
+                          Clear All
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowUrlInput(!showUrlInput)}
-                          className="w-20 h-6 rounded border border-[#EFE3D2] text-[#7A7373] flex items-center justify-center gap-1 text-[9px] hover:border-[#C8A15A] hover:text-[#C8A15A] transition-colors"
-                          title="Add by URL"
-                        >
-                          <LinkIcon className="w-3 h-3" />
-                          URL
-                        </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
-                  {/* Hidden file input — accept image/* triggers camera on mobile */}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    capture="environment"
-                    className="hidden"
-                    onChange={(e) => handleFileSelect(e.target.files)}
-                  />
-
-                  {/* URL input row */}
+                  {/* URL Input Bar */}
                   {showUrlInput && (
-                    <div className="flex gap-2 mb-2">
+                    <div className="flex items-center gap-2 pt-2">
                       <input
-                        ref={urlInputRef}
-                        type="text"
+                        type="url"
+                        placeholder="https://example.com/jewellery-image.webp"
                         value={pendingUrl}
                         onChange={(e) => setPendingUrl(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddUrl())}
-                        placeholder="/images/my-product.png or https://..."
-                        className="flex-1 px-3 py-2 bg-[#FAF6F0] border border-[#EFE3D2] rounded focus:outline-none focus:border-[#C8A15A] text-[11px]"
-                        autoFocus
+                        className="flex-1 px-3 py-2 bg-white border border-[#E8E0D5] text-xs text-[#191414] focus:outline-none focus:border-[#C8A15A]"
                       />
                       <button
                         type="button"
                         onClick={handleAddUrl}
-                        className="px-3 py-1.5 bg-[#3A080C] text-[#E4C98A] rounded text-[10px] font-semibold hover:bg-[#5A1118]"
+                        className="px-4 py-2 bg-[#C8A15A] text-[#1A0205] text-xs font-semibold uppercase tracking-wider hover:bg-[#E4C98A]"
                       >
-                        Add
+                        Insert
                       </button>
                     </div>
                   )}
 
-                  {imageSlots.some((s) => s.previewSrc && !s.url) && (
-                    <p className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mt-1">
-                      ⚠ Images with a camera icon preview are locally selected but not yet uploaded to Supabase Storage. Connect Supabase to enable permanent cloud storage.
-                    </p>
+                  {/* Image Grid / Strip */}
+                  {imageSlots.length === 0 ? (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-[#E8E0D5] hover:border-[#C8A15A] rounded-xs p-8 text-center cursor-pointer transition-colors"
+                    >
+                      <Upload className="w-8 h-8 text-[#C8A15A] mx-auto mb-2" />
+                      <p className="font-serif text-sm text-[#1A0205]">
+                        Click to upload photos from your device or mobile gallery
+                      </p>
+                      <p className="text-[11px] text-[#7A7373] mt-1">
+                        High-resolution JPG, PNG or WEBP recommended.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
+                      {imageSlots.map((slot, index) => {
+                        const displayUrl = slot.url || slot.previewSrc || "/images/golden-waist-chain.png";
+                        const isPrimary = index === 0;
+
+                        return (
+                          <div
+                            key={slot.id}
+                            className={`relative group bg-white border ${
+                              isPrimary ? "border-[#C8A15A] ring-1 ring-[#C8A15A]" : "border-[#E8E0D5]"
+                            } rounded-xs overflow-hidden flex flex-col`}
+                          >
+                            {/* Primary Badge */}
+                            {isPrimary && (
+                              <span className="absolute top-2 left-2 z-10 bg-[#1A0205] text-[#E4C98A] text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 shadow-xs">
+                                Cover Photo
+                              </span>
+                            )}
+
+                            {/* Image Thumbnail */}
+                            <div className="relative aspect-square w-full bg-[#FAF6F0]">
+                              <Image
+                                src={displayUrl}
+                                alt={`Product slot ${index + 1}`}
+                                fill
+                                className="object-cover"
+                              />
+
+                              {/* Uploading Spinner */}
+                              {slot.isUploading && (
+                                <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white">
+                                  <Loader2 className="w-5 h-5 animate-spin text-[#E4C98A] mb-1" />
+                                  <span className="text-[10px] tracking-wider">Uploading...</span>
+                                </div>
+                              )}
+
+                              {/* Error banner */}
+                              {slot.error && (
+                                <div className="absolute inset-0 bg-red-900/80 p-2 flex items-center justify-center text-center text-white text-[10px]">
+                                  {slot.error}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Image Controls */}
+                            <div className="p-2 bg-white flex items-center justify-between border-t border-[#E8E0D5] text-xs">
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  disabled={index === 0}
+                                  onClick={() => moveImage(index, index - 1)}
+                                  className="p-1 text-[#7A7373] hover:text-[#1A0205] disabled:opacity-30"
+                                  title="Move Left"
+                                >
+                                  <ArrowLeft className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={index === imageSlots.length - 1}
+                                  onClick={() => moveImage(index, index + 1)}
+                                  className="p-1 text-[#7A7373] hover:text-[#1A0205] disabled:opacity-30"
+                                  title="Move Right"
+                                >
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+
+                              {!isPrimary && (
+                                <button
+                                  type="button"
+                                  onClick={() => setCoverImage(index)}
+                                  className="text-[9.5px] uppercase tracking-wider text-[#C8A15A] hover:text-[#1A0205] font-semibold"
+                                >
+                                  Make Cover
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => setDeleteTargetImageIndex(index)}
+                                className="p-1 text-[#7A7373] hover:text-red-600 transition-colors"
+                                title="Remove photo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
 
-                {/* Title & Subtitle */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="uppercase tracking-wider font-semibold text-[#3A080C] block mb-1">
-                      Product Title *
+                {/* ── SECTION: GENERAL INFORMATION ── */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Name */}
+                  <div className="sm:col-span-2">
+                    <label className="text-xs uppercase tracking-[0.14em] text-[#191414] font-semibold block mb-1">
+                      Piece Title *
                     </label>
                     <input
                       type="text"
                       required
+                      placeholder="e.g. Celestial Crescent Pendant"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Golden Waist Chain"
-                      className="w-full px-3.5 py-2.5 bg-[#FAF6F0] border border-[#EFE3D2] rounded focus:outline-none focus:border-[#C8A15A]"
+                      className="w-full px-3.5 py-2.5 bg-white border border-[#E8E0D5] text-sm text-[#191414] focus:outline-none focus:border-[#C8A15A]"
                     />
                   </div>
+
+                  {/* Subtitle */}
                   <div>
-                    <label className="uppercase tracking-wider font-semibold text-[#3A080C] block mb-1">
-                      Subtitle / Tagline
+                    <label className="text-xs uppercase tracking-[0.14em] text-[#191414] font-semibold block mb-1">
+                      Subtitle / Editorial Note
                     </label>
                     <input
                       type="text"
+                      placeholder="e.g. Hand-finished silver with micro-pave detailing"
                       value={subtitle}
                       onChange={(e) => setSubtitle(e.target.value)}
-                      placeholder="e.g. Dainty link silhouette"
-                      className="w-full px-3.5 py-2.5 bg-[#FAF6F0] border border-[#EFE3D2] rounded focus:outline-none focus:border-[#C8A15A]"
+                      className="w-full px-3.5 py-2 bg-white border border-[#E8E0D5] text-xs text-[#191414] focus:outline-none focus:border-[#C8A15A]"
                     />
                   </div>
-                </div>
 
-                {/* Category & SKU */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Category */}
                   <div>
-                    <label className="uppercase tracking-wider font-semibold text-[#3A080C] block mb-1">
+                    <label className="text-xs uppercase tracking-[0.14em] text-[#191414] font-semibold block mb-1">
                       Category *
                     </label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-[#FAF6F0] border border-[#EFE3D2] rounded focus:outline-none focus:border-[#C8A15A]"
+                      className="w-full px-3.5 py-2 bg-white border border-[#E8E0D5] text-xs text-[#191414] focus:outline-none focus:border-[#C8A15A]"
                     >
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.name}>
-                          {c.name}
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.name}>
+                          {cat.name}
                         </option>
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="uppercase tracking-wider font-semibold text-[#3A080C] block mb-1">
-                      SKU *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={sku}
-                      onChange={(e) => setSku(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-[#FAF6F0] border border-[#EFE3D2] rounded focus:outline-none focus:border-[#C8A15A]"
-                    />
-                  </div>
-                </div>
 
-                {/* Pricing & Stock */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Price */}
                   <div>
-                    <label className="uppercase tracking-wider font-semibold text-[#3A080C] block mb-1">
-                      Price (₹) *
+                    <label className="text-xs uppercase tracking-[0.14em] text-[#191414] font-semibold block mb-1">
+                      Selling Price (₹ INR) *
                     </label>
                     <input
                       type="number"
                       required
-                      min={0}
+                      min={1}
                       value={price}
                       onChange={(e) => setPrice(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 bg-[#FAF6F0] border border-[#EFE3D2] rounded focus:outline-none focus:border-[#C8A15A]"
+                      className="w-full px-3.5 py-2 bg-white border border-[#E8E0D5] text-sm text-[#191414] focus:outline-none focus:border-[#C8A15A]"
                     />
                   </div>
+
+                  {/* Original / Compare At Price */}
                   <div>
-                    <label className="uppercase tracking-wider font-semibold text-[#3A080C] block mb-1">
-                      Original Price (₹)
+                    <label className="text-xs uppercase tracking-[0.14em] text-[#191414] font-semibold block mb-1">
+                      Original Price (₹ INR)
                     </label>
                     <input
                       type="number"
-                      min={0}
+                      min={1}
                       value={originalPrice}
                       onChange={(e) => setOriginalPrice(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 bg-[#FAF6F0] border border-[#EFE3D2] rounded focus:outline-none focus:border-[#C8A15A]"
+                      className="w-full px-3.5 py-2 bg-white border border-[#E8E0D5] text-sm text-[#191414] focus:outline-none focus:border-[#C8A15A]"
                     />
                   </div>
+
+                  {/* Stock */}
                   <div>
-                    <label className="uppercase tracking-wider font-semibold text-[#3A080C] block mb-1">
-                      Stock *
+                    <label className="text-xs uppercase tracking-[0.14em] text-[#191414] font-semibold block mb-1">
+                      Available Stock Quantity *
                     </label>
                     <input
                       type="number"
@@ -672,77 +885,190 @@ export default function AdminProductsPage() {
                       min={0}
                       value={stock}
                       onChange={(e) => setStock(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 bg-[#FAF6F0] border border-[#EFE3D2] rounded focus:outline-none focus:border-[#C8A15A]"
+                      className="w-full px-3.5 py-2 bg-white border border-[#E8E0D5] text-sm text-[#191414] focus:outline-none focus:border-[#C8A15A]"
+                    />
+                  </div>
+
+                  {/* SKU */}
+                  <div>
+                    <label className="text-xs uppercase tracking-[0.14em] text-[#191414] font-semibold block mb-1">
+                      SKU Code
+                    </label>
+                    <input
+                      type="text"
+                      value={sku}
+                      onChange={(e) => setSku(e.target.value)}
+                      className="w-full px-3.5 py-2 bg-white border border-[#E8E0D5] text-xs font-mono text-[#191414] focus:outline-none focus:border-[#C8A15A]"
+                    />
+                  </div>
+
+                  {/* Materials */}
+                  <div className="sm:col-span-2">
+                    <label className="text-xs uppercase tracking-[0.14em] text-[#191414] font-semibold block mb-1">
+                      Materials & Craft
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 18K Gold Finish, High-grade brass alloy, Anti-tarnish seal"
+                      value={materials}
+                      onChange={(e) => setMaterials(e.target.value)}
+                      className="w-full px-3.5 py-2 bg-white border border-[#E8E0D5] text-xs text-[#191414] focus:outline-none focus:border-[#C8A15A]"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div className="sm:col-span-2">
+                    <label className="text-xs uppercase tracking-[0.14em] text-[#191414] font-semibold block mb-1">
+                      Product Description
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Describe the piece, the story behind it, and recommended styling..."
+                      className="w-full px-3.5 py-2 bg-white border border-[#E8E0D5] text-xs text-[#191414] focus:outline-none focus:border-[#C8A15A]"
                     />
                   </div>
                 </div>
 
-                {/* Description */}
-                <div>
-                  <label className="uppercase tracking-wider font-semibold text-[#3A080C] block mb-1">
-                    Product Description *
+                {/* ── SECTION: VISIBILITY & BADGES ── */}
+                <div className="border-t border-[#E8E0D5] pt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isPublished}
+                      onChange={(e) => setIsPublished(e.target.checked)}
+                      className="w-4 h-4 text-[#1A0205] focus:ring-[#C8A15A] rounded-xs"
+                    />
+                    <span className="text-xs text-[#191414] font-medium">Publish to Store</span>
                   </label>
-                  <textarea
-                    required
-                    rows={3}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe the silhouette, finish, and everyday appeal..."
-                    className="w-full px-3.5 py-2.5 bg-[#FAF6F0] border border-[#EFE3D2] rounded focus:outline-none focus:border-[#C8A15A]"
-                  />
-                </div>
 
-                {/* Materials */}
-                <div>
-                  <label className="uppercase tracking-wider font-semibold text-[#3A080C] block mb-1">
-                    Materials
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isFeatured}
+                      onChange={(e) => setIsFeatured(e.target.checked)}
+                      className="w-4 h-4 text-[#1A0205] focus:ring-[#C8A15A] rounded-xs"
+                    />
+                    <span className="text-xs text-[#191414] font-medium">Homepage Featured</span>
                   </label>
-                  <input
-                    type="text"
-                    value={materials}
-                    onChange={(e) => setMaterials(e.target.value)}
-                    placeholder="e.g. Polished gold-tone alloy with anti-tarnish coating"
-                    className="w-full px-3.5 py-2.5 bg-[#FAF6F0] border border-[#EFE3D2] rounded focus:outline-none focus:border-[#C8A15A]"
-                  />
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isNewArrival}
+                      onChange={(e) => setIsNewArrival(e.target.checked)}
+                      className="w-4 h-4 text-[#1A0205] focus:ring-[#C8A15A] rounded-xs"
+                    />
+                    <span className="text-xs text-[#191414] font-medium">New Arrival</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isBestSeller}
+                      onChange={(e) => setIsBestSeller(e.target.checked)}
+                      className="w-4 h-4 text-[#1A0205] focus:ring-[#C8A15A] rounded-xs"
+                    />
+                    <span className="text-xs text-[#191414] font-medium">Best Seller</span>
+                  </label>
                 </div>
 
-                {/* Flags */}
-                <div className="pt-2 border-t border-[#EFE3D2] flex flex-wrap gap-4">
-                  {[
-                    { label: "Featured Piece", state: isFeatured, set: setIsFeatured },
-                    { label: "New Arrival", state: isNewArrival, set: setIsNewArrival },
-                    { label: "Best Seller", state: isBestSeller, set: setIsBestSeller },
-                    { label: "Publish Live", state: isPublished, set: setIsPublished },
-                  ].map((flag) => (
-                    <label key={flag.label} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={flag.state}
-                        onChange={(e) => flag.set(e.target.checked)}
-                        className="rounded text-[#3A080C]"
-                      />
-                      <span className="font-semibold text-[#3A080C]">{flag.label}</span>
-                    </label>
-                  ))}
-                </div>
-
-                {/* Submit */}
-                <div className="pt-4 border-t border-[#EFE3D2] flex justify-end gap-3">
+                {/* Modal Actions */}
+                <div className="border-t border-[#E8E0D5] pt-4 flex items-center justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-5 py-2.5 border border-[#EFE3D2] rounded text-xs font-semibold hover:bg-[#FAF6F0] transition-colors"
+                    className="px-5 py-2.5 border border-[#E8E0D5] text-xs uppercase tracking-wider text-[#7A7373] hover:text-[#191414]"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 bg-[#3A080C] text-[#E4C98A] text-xs uppercase tracking-wider font-semibold rounded hover:bg-[#5A1118] transition-colors shadow-sm"
+                    disabled={isSaving}
+                    className="px-7 py-2.5 bg-[#1A0205] text-[#E4C98A] text-xs uppercase tracking-[0.16em] font-medium hover:bg-[#260407] transition-all shadow-sm disabled:opacity-50"
                   >
-                    {editingProduct ? "Save Changes" : "Create Piece"}
+                    {isSaving ? "Saving Piece..." : editingProduct ? "Save Changes" : "Create Piece"}
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── DELETE IMAGE CONFIRMATION MODAL ── */}
+      <AnimatePresence>
+        {deleteTargetImageIndex !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="bg-white border border-[#E8E0D5] w-full max-w-md p-6 rounded-xs shadow-2xl space-y-4 font-sans"
+            >
+              <div className="flex items-center gap-3 text-red-600">
+                <AlertTriangle className="w-5 h-5" />
+                <h3 className="font-serif text-xl text-[#1A0205]">Delete Photo</h3>
+              </div>
+              <p className="text-xs text-[#7A7373]">
+                Are you sure you want to permanently delete this photo from the product listing and Supabase Storage?
+              </p>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteTargetImageIndex(null)}
+                  className="px-4 py-2 text-xs uppercase tracking-wider text-[#7A7373] hover:text-[#191414]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => executeDeleteImage(deleteTargetImageIndex)}
+                  className="px-5 py-2 bg-red-600 text-white text-xs uppercase tracking-wider font-semibold hover:bg-red-700"
+                >
+                  Delete Photo
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── DELETE PRODUCT CONFIRMATION MODAL ── */}
+      <AnimatePresence>
+        {deleteTargetProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="bg-white border border-[#E8E0D5] w-full max-w-md p-6 rounded-xs shadow-2xl space-y-4 font-sans"
+            >
+              <div className="flex items-center gap-3 text-red-600">
+                <AlertTriangle className="w-5 h-5" />
+                <h3 className="font-serif text-xl text-[#1A0205]">Delete Jewellery Piece</h3>
+              </div>
+              <p className="text-xs text-[#7A7373]">
+                Are you sure you want to permanently delete <strong>{deleteTargetProduct.name}</strong> ({deleteTargetProduct.sku})?
+                Historical orders containing this piece will remain intact.
+              </p>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteTargetProduct(null)}
+                  className="px-4 py-2 text-xs uppercase tracking-wider text-[#7A7373] hover:text-[#191414]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteProduct}
+                  className="px-5 py-2 bg-red-600 text-white text-xs uppercase tracking-wider font-semibold hover:bg-red-700"
+                >
+                  Delete Piece
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
