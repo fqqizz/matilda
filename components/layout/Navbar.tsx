@@ -10,9 +10,17 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export const Navbar = () => {
   const pathname = usePathname();
-  const { cartCount, wishlist, setIsCartOpen, setIsSearchOpen, categories, settings } = useStore();
+  const {
+    cartCount,
+    wishlist,
+    setIsCartOpen,
+    setIsSearchOpen,
+    isMobileMenuOpen,
+    setIsMobileMenuOpen,
+    categories,
+    settings,
+  } = useStore();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollectionsOpen, setIsCollectionsOpen] = useState(false);
 
   useEffect(() => {

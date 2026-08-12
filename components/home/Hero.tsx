@@ -6,7 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useStore } from "@/lib/context/StoreContext";
 
-// Editorial luxury motion curve
+// High-fashion cinematic motion curve (ultra-smooth butter curve)
 const luxuryEase = [0.16, 1, 0.3, 1];
 
 export const Hero = () => {
@@ -22,50 +22,50 @@ export const Hero = () => {
   const textY = useTransform(scrollYProgress, [0, 1], [0, 45]);
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
-  // Motion variants triggered sequentially with smooth GPU transform
+  // Pure GPU-accelerated entrance motion (zero layout shifts, zero abrupt popping)
   const containerVariants = {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: 0.16,
-        delayChildren: 0.08,
+        staggerChildren: 0.14,
+        delayChildren: 0.06,
       },
     },
   };
 
   const line1Variants = {
-    hidden: { opacity: 0, y: 24 },
+    hidden: { opacity: 0, y: 14 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.95, ease: luxuryEase },
+      transition: { duration: 1.15, ease: luxuryEase },
     },
   };
 
   const line2Variants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 12 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.9, ease: luxuryEase },
+      transition: { duration: 1.1, ease: luxuryEase },
     },
   };
 
   const line3Variants = {
-    hidden: { opacity: 0, y: 24 },
+    hidden: { opacity: 0, y: 14 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.95, ease: luxuryEase },
+      transition: { duration: 1.15, ease: luxuryEase },
     },
   };
 
   const ctaVariants = {
-    hidden: { opacity: 0, y: 18 },
+    hidden: { opacity: 0, y: 10 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.85, ease: luxuryEase },
+      transition: { duration: 1.0, ease: luxuryEase },
     },
   };
 
@@ -104,7 +104,7 @@ export const Hero = () => {
           className="max-w-4xl w-full"
         >
           {/* Eyebrow: Quiet Brand Attribution */}
-          <motion.div variants={line2Variants} className="mb-6 sm:mb-8 pt-1 pl-0.5">
+          <motion.div variants={line2Variants} className="mb-5 sm:mb-8 pt-1 pl-0.5">
             <div className="inline-flex items-center gap-2 text-[#E4C98A]/85 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] font-light">
               <span>MATILDA</span>
               <span className="text-[#C8A15A]/40">•</span>
@@ -112,24 +112,24 @@ export const Hero = () => {
             </div>
           </motion.div>
 
-          {/* ── HIGH-FASHION EDITORIAL HEADLINE WITH MATHEMATICALLY BALANCED SPACING ── */}
+          {/* ── HIGH-FASHION EDITORIAL HEADLINE (FLUID & BALANCED) ── */}
           <div className="text-[#FFFDF9] mb-8 sm:mb-10 pl-0.5">
             
-            {/* Line 1: JEWELS (Spacious, elegant serif heading, zero clipping) */}
+            {/* Line 1: JEWELS (Unchanged font, size, and styling) */}
             <motion.div variants={line1Variants} className="pt-0.5 pb-1">
               <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-normal tracking-tight leading-[1.02] block text-[#FFFDF9]">
                 JEWELS
               </h1>
             </motion.div>
 
-            {/* Line 2: for every (Harmoniously centered between JEWELS and version of you, larger display presence) */}
-            <motion.div variants={line2Variants} className="py-2.5 sm:py-3.5 md:py-4">
+            {/* Line 2: for every (Nudged downward with balanced vertical breathing room above and below) */}
+            <motion.div variants={line2Variants} className="pt-4 sm:pt-5 md:pt-6 pb-2.5 sm:pb-3.5 md:pb-4">
               <span className="font-editorial italic text-2xl sm:text-3xl md:text-4xl lg:text-5xl tracking-[0.14em] text-[#E4C98A] block leading-none">
                 for every
               </span>
             </motion.div>
 
-            {/* Line 3: version of you. (Italic serif statement with matched left alignment) */}
+            {/* Line 3: version of you. (Unchanged font, size, and styling) */}
             <motion.div variants={line3Variants} className="pt-1 pb-2">
               <div className="font-serif italic text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-light tracking-tight leading-[1.08] text-[#EFE3D2]">
                 version of you.
@@ -141,7 +141,7 @@ export const Hero = () => {
           <motion.div variants={ctaVariants} className="pt-2 pl-0.5">
             <Link
               href="/shop"
-              className="inline-flex items-center gap-3 px-8 py-3.5 bg-[#C8A15A] text-[#1A0205] font-sans font-medium text-xs uppercase tracking-[0.16em] hover:bg-[#E4C98A] transition-all duration-300 shadow-luxury group"
+              className="inline-flex items-center gap-3 px-7 sm:px-8 py-3.5 bg-[#C8A15A] text-[#1A0205] font-sans font-medium text-xs uppercase tracking-[0.16em] hover:bg-[#E4C98A] transition-all duration-300 shadow-luxury group min-h-[44px]"
             >
               <span>Discover The Collection</span>
               <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />

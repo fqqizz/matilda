@@ -109,24 +109,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
 
-        {/* Wishlist Button */}
+        {/* Wishlist Button (Always accessible on touch, hover on desktop) */}
         <button
           onClick={handleToggleWishlist}
           aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-          className={`absolute top-2.5 right-2.5 p-2 rounded-full transition-all duration-200 z-20 ${
+          className={`absolute top-2.5 right-2.5 p-2 rounded-full transition-all duration-200 z-20 min-h-[36px] min-w-[36px] flex items-center justify-center ${
             isWishlisted
-              ? "bg-[#1A0205] text-[#E4C98A]"
-              : "bg-[#FFFDF9]/85 text-[#191414] hover:bg-[#1A0205] hover:text-[#E4C98A] opacity-0 group-hover:opacity-100"
+              ? "bg-[#1A0205] text-[#E4C98A] opacity-100"
+              : "bg-[#FFFDF9]/85 text-[#191414] hover:bg-[#1A0205] hover:text-[#E4C98A] opacity-90 sm:opacity-0 sm:group-hover:opacity-100"
           }`}
         >
           <Heart className={`w-3.5 h-3.5 ${isWishlisted ? "fill-[#E4C98A]" : ""}`} />
         </button>
 
-        {/* Quick Action Overlay (Bottom) */}
-        <div className="absolute bottom-2.5 inset-x-2.5 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1.5 group-hover:translate-y-0 z-20">
+        {/* Quick Action Overlay (Bottom on desktop hover, clean link on mobile) */}
+        <div className="hidden sm:flex absolute bottom-2.5 inset-x-2.5 items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1.5 group-hover:translate-y-0 z-20">
           <button
             onClick={handleQuickView}
-            className="flex-1 py-2 px-3 bg-[#FFFDF9]/95 text-[#1A0205] hover:bg-[#1A0205] hover:text-[#E4C98A] text-[9.5px] uppercase tracking-[0.14em] font-sans font-medium transition-colors flex items-center justify-center gap-1 shadow-xs"
+            className="flex-1 py-2 px-3 bg-[#FFFDF9]/95 text-[#1A0205] hover:bg-[#1A0205] hover:text-[#E4C98A] text-[9.5px] uppercase tracking-[0.14em] font-sans font-medium transition-colors flex items-center justify-center gap-1 shadow-xs min-h-[36px]"
           >
             <Eye className="w-3 h-3" />
             <span>Quick View</span>
@@ -134,10 +134,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <button
             onClick={handleQuickAdd}
             disabled={product.stock === 0}
-            className="p-2 bg-[#C8A15A] text-[#1A0205] hover:bg-[#E4C98A] transition-colors disabled:opacity-50 shadow-xs"
+            className="p-2 bg-[#C8A15A] text-[#1A0205] hover:bg-[#E4C98A] transition-colors disabled:opacity-50 shadow-xs min-h-[36px] min-w-[36px] flex items-center justify-center"
             aria-label="Add to bag"
           >
-            <ShoppingBag className="w-3 h-3" />
+            <ShoppingBag className="w-3.5 h-3.5" />
           </button>
         </div>
       </Link>

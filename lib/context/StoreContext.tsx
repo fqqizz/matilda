@@ -21,6 +21,8 @@ interface StoreContextType {
   setIsCartOpen: (open: boolean) => void;
   isSearchOpen: boolean;
   setIsSearchOpen: (open: boolean) => void;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (open: boolean) => void;
   quickViewProduct: Product | null;
   setQuickViewProduct: (product: Product | null) => void;
   
@@ -77,6 +79,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [isPreloaderComplete, setIsPreloaderComplete] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -622,6 +625,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         setIsCartOpen,
         isSearchOpen,
         setIsSearchOpen,
+        isMobileMenuOpen,
+        setIsMobileMenuOpen,
         quickViewProduct,
         setQuickViewProduct,
         addToCart,
