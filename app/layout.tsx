@@ -7,6 +7,7 @@ import { Preloader } from "@/components/layout/Preloader";
 import { CartDrawer } from "@/components/ui/CartDrawer";
 import { SearchModal } from "@/components/ui/SearchModal";
 import { QuickViewModal } from "@/components/ui/QuickViewModal";
+import { CustomCursor } from "@/components/ui/CustomCursor";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://matildajewellery.com"),
@@ -56,8 +57,9 @@ export default function RootLayout({
       <body className="font-sans bg-[#FFFDF9] text-[#191414] antialiased min-h-screen flex flex-col justify-between selection:bg-[#3A080C] selection:text-[#E4C98A]">
         <StoreProvider>
           <Preloader />
+          <CustomCursor />
           <Navbar />
-          <main className="flex-1">{children}</main>
+          <div className="flex-1">{children}</div>
           <Footer />
 
           {/* Global Interactive Overlays */}

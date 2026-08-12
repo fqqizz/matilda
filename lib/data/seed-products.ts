@@ -323,7 +323,7 @@ export const INITIAL_SETTINGS: SiteSettings = {
   tagline: "Timeless Silhouettes. Made To Become Yours.",
   bio: "Timeless silhouettes offering the look of fine jewellery at a fraction of the cost. Delivery across India.",
   instagramHandle: "@matilldaaa._",
-  instagramUrl: "https://www.instagram.com/mattilldaaa._/",
+  instagramUrl: "https://www.instagram.com/matilldaaa._/",
   phone: "+91 95411 98330",
   whatsappNumber: "919541198330",
   deliveryNotice: "Pan-India Express Delivery within 3–6 business days",

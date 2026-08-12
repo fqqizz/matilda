@@ -1,7 +1,7 @@
-﻿# MATILDA JEWELLERY — PRODUCTION SETUP & HANDOFF GUIDE
+# MATILDA JEWELLERY — PRODUCTION SETUP & HANDOFF GUIDE
 **Founder & Creative Director:** Duha Ajaz Pandith  
 **Brand Identity:** MATILDA by Duha Ajaz Pandith  
-**Official Instagram:** [@matilldaaa._](https://www.instagram.com/mattilldaaa._/)  
+**Official Instagram:** [@matilldaaa._](https://www.instagram.com/matilldaaa._/)  
 **Direct Contact / WhatsApp:** +91 95411 98330  
 **Positioning Statement:** *"Timeless silhouettes offering the look of fine jewellery at a fraction of the cost. Delivery across India."*
 

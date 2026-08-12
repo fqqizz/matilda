@@ -94,7 +94,7 @@ export default function OrderConfirmationPage() {
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-4">
             <a
-              href={`https://wa.me/${settings.whatsappNumber}?text=Hi%20Duhaa,%20I%20just%20placed%20order%20${order.id}%20for%20₹${order.total}!`}
+              href={`https://wa.me/${settings.whatsappNumber}?text=Hi%20Duha,%20I%20just%20placed%20order%20${order.id}%20for%20₹${order.total}!`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#25D366] text-white rounded text-xs uppercase tracking-wider font-semibold hover:bg-[#1EBE5D] transition-colors shadow-sm"
