@@ -138,11 +138,6 @@ export const Footer = () => {
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link href="/admin" className="hover:text-[#E4C98A] transition-colors inline-flex items-center gap-1">
-                  Admin Portal <ArrowUpRight className="w-3 h-3 text-[#C8A15A]" />
-                </Link>
-              </li>
             </ul>
           </div>
 

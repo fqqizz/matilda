@@ -9,6 +9,7 @@ import { CartDrawer } from "@/components/ui/CartDrawer";
 import { SearchModal } from "@/components/ui/SearchModal";
 import { QuickViewModal } from "@/components/ui/QuickViewModal";
 import { CustomCursor } from "@/components/ui/CustomCursor";
+import { MusicToggle } from "@/components/ui/MusicToggle";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -97,6 +98,7 @@ export default function RootLayout({
           <Footer />
 
           {/* Global Interactive Overlays */}
+          <MusicToggle />
           <CartDrawer />
           <SearchModal />
           <QuickViewModal />

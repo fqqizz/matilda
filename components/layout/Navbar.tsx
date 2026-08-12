@@ -276,9 +276,6 @@ export const Navbar = () => {
                     WhatsApp
                   </a>
                 </div>
-                <Link href="/admin" className="block pt-2 text-[10px] uppercase tracking-[0.14em] text-[#E4C98A]/35 hover:text-[#E4C98A]">
-                  Admin Portal →
-                </Link>
               </div>
             </motion.div>
           </>

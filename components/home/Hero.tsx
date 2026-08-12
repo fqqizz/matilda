@@ -119,9 +119,9 @@ export const Hero = () => {
               </h1>
             </motion.div>
 
-            {/* Line 2: FOR EVERY (Separated with clean whitespace, quiet gold/cream) */}
-            <motion.div variants={line2Variants} className="py-1 pl-1 sm:pl-2">
-              <span className="font-sans font-normal text-xs sm:text-sm uppercase tracking-[0.22em] text-[#E4C98A] block">
+            {/* Line 2: FOR EVERY (Refined Instrument Serif editorial display, larger, perfectly spaced) */}
+            <motion.div variants={line2Variants} className="py-2 sm:py-3 pl-1 sm:pl-1.5">
+              <span className="font-editorial italic text-2xl sm:text-3xl md:text-4xl lg:text-5xl tracking-[0.12em] text-[#E4C98A] block leading-none">
                 for every
               </span>
             </motion.div>
